@@ -1,0 +1,57 @@
+{
+    "kits-loaders": "1.0.0",
+    "components-name": "@builtin",
+    "components-version": "1.0.0@bin",
+    "components-icons": null,
+    "authors": [
+        "Suphakorn Khamwongsa",
+        "Sorawit"
+    ],
+    "@objects": [
+        {
+            "name": "Hand",
+            "main_file": "Hand/__init__.py",
+            "main_class": "HandTool",
+            "type": "drawing_tool",
+            "icon_text": "Hand",
+            "icon_pic": null,
+            "icon_cursor": null
+        },
+        {
+            "name": "Pen",
+            "main_file": "Pen/__init__.py",
+            "main_class": "PenTool",
+            "type": "drawing_tool",
+            "icon_text": "Pen",
+            "icon_pic": null,
+            "icon_cursor": null
+        },
+        {
+            "name": "Eraser",
+            "main_file": "Eraser/__init__.py",
+            "main_class": "EraserTool",
+            "type": "drawing_tool",
+            "icon_text": "Erase",
+            "icon_pic": null,
+            "icon_cursor": null
+        },
+        {
+            "name": "ColorPad",
+            "main_file": "ColorPad/__init__.py",
+            "main_class": "ColorPad",
+            "type": "context_tool",
+            "icon_text": "CPad",
+            "icon_pic": null,
+            "icon_cursor": null
+        },
+        {
+            "name": "ZoomTool",
+            "main_file": "utils/zoom.py",
+            "main_class": "ZoomTool",
+            "type": "ui_component",
+            "icon_text": null,
+            "icon_pic": null,
+            "icon_cursor": null
+        }
+    ]
+}
