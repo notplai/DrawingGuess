@@ -74,12 +74,12 @@ def loads(components_dir="components"):
                     # Add to sys.modules to handle relative imports *if needed*
                     sys.modules[module_name] = module 
                     
-                    spec.loader.exec_module(module)
+                    spec.loader.exec_module(module) # type: ignore
                     
                     # Get the class from the loaded module
                     ToolClass = getattr(module, main_class)
                     
-                    # [NEW] Icon Path Processing
+                    #  Icon Path Processing
                     # If icon_pic is specified, make it an absolute path
                     if tool_config.get("icon_pic"):
                         icon_path = os.path.abspath(os.path.join(kit_path, tool_config["icon_pic"]))

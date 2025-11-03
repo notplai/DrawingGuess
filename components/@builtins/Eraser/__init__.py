@@ -1,6 +1,5 @@
 import pygame
-from libs.common.components import Button, Slider
-from libs.common.components import InputBox # [NEW] Import InputBox
+from libs.common.components import SolidButton, SolidSlider, InputBox
 import math
 
 class EraserTool:
@@ -9,10 +8,9 @@ class EraserTool:
     """
     def __init__(self, rect, config):
         self.name = config["name"].lower() # "eraser"
-        self.config_type = "context_tool" # [MODIFIED] Changed to context_tool
-        self.button = Button(
+        self.config_type = "context_tool" #  Changed to context_tool
+        self.button = SolidButton(
             rect.x, rect.y, rect.width, rect.height, 
-            text=config["icon_text"], 
             bg_color=(100,100,100), 
             font_size=20,
             icon_path=config.get("icon_path")
@@ -20,16 +18,16 @@ class EraserTool:
         self.is_drawing_tool = True # This tool *does* draw
         self.last_pos = None
 
-        # --- [NEW] Size Picker Assets ---
-        self.modal_rect = pygame.Rect(0, 0, 280, 80) # [MODIFIED] Increased width from 250 to 280
-        self.slider = Slider(
+        # ---  Size Picker Assets ---
+        self.modal_rect = pygame.Rect(0, 0, 280, 80) #  Increased width from 250 to 280
+        self.slider = SolidSlider(
             x=self.modal_rect.x + 20, y=self.modal_rect.y + 25, 
             width=100, height=30, 
-            min_val=1, max_val=40, initial_val=50 # [FIX] Initial val was 5
+            min_val=1, max_val=40, initial_val=50 #  Initial val was 5
         )
         self.input_box = InputBox(
             x=self.modal_rect.x + 130, y=self.modal_rect.y + 25,
-            width=70, height=30, text='50' # [FIX] Initial text was 5
+            width=70, height=30, text='50' #  Initial text was 5
         )
         try:
             self.font = pygame.font.Font("freesansbold.ttf", 20)
@@ -50,15 +48,15 @@ class EraserTool:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.button.rect.collidepoint(event.pos):
                 
-                # [FIX] Set this tool as active, deselecting other tools
+                #  Set this tool as active, deselecting other tools
                 context["active_tool_name"] = self.name 
                 
                 if context.get("menu_open") == self.name:
-                    context["menu_open"] = None # Close self
+                    context["menu_open"] = None
                 else:
-                    context["menu_open"] = self.name # Open self
+                    context["menu_open"] = self.name
                     # Sync slider to current context value when opening
-                    current_size = context.get("eraser_size", 50) # [FIX] Get eraser_size
+                    current_size = context.get("eraser_size", 50) #  Get eraser_size
                     self.slider.set_value(current_size)
                     self.input_box.set_text(str(current_size))
                 return True # Consumed event
@@ -73,7 +71,7 @@ class EraserTool:
         # Check for slider interaction
         if self.slider.handle_event(event):
             new_size = int(self.slider.get_value())
-            context["eraser_size"] = new_size # [FIX] Set eraser_size
+            context["eraser_size"] = new_size #  Set eraser_size
             self.input_box.set_text(str(new_size))
             return True # Consumed
             
@@ -84,9 +82,9 @@ class EraserTool:
                 new_size = int(new_text)
                 new_size = max(1, min(new_size, 2048)) # Clamp to bounds
             except ValueError:
-                new_size = context.get("eraser_size", 50) # [FIX] Get eraser_size
+                new_size = context.get("eraser_size", 50) #  Get eraser_size
             
-            context["eraser_size"] = new_size # [FIX] Set eraser_size
+            context["eraser_size"] = new_size #  Set eraser_size
             self.slider.set_value(new_size) # Update slider
             self.input_box.set_text(str(new_size)) # Re-set text
             return True # Consumed
@@ -100,7 +98,9 @@ class EraserTool:
         # Check for click *outside* modal
         if event.type == pygame.MOUSEBUTTONDOWN and not self.modal_rect.collidepoint(mouse_pos):
             context["menu_open"] = None # Close menu
-            # Do NOT return True, allow click to pass to other tools
+            # [FIX] Do NOT fall through to drawing.
+            # The click was on the UI layer (e.g., another button).
+            return False 
             
         # Consume all other motion events if mouse is over modal
         if self.modal_rect.collidepoint(mouse_pos):
@@ -122,8 +122,8 @@ class EraserTool:
                 
                 # Draw a single circle on click
                 drawing_surface = context["drawing_surface"]
-                eraser_size = context.get("eraser_size", 50) # [FIX] Get eraser_size
-                pygame.draw.circle(drawing_surface, "White", self.last_pos, max(1, eraser_size // 2)) # [FIX]
+                eraser_size = context.get("eraser_size", 50) #  Get eraser_size
+                pygame.draw.circle(drawing_surface, "White", self.last_pos, max(1, eraser_size // 2)) # 
                 
                 return True 
 
@@ -138,10 +138,10 @@ class EraserTool:
         elif event.type == pygame.MOUSEMOTION:
             if context["is_drawing"] and self.last_pos:
                 drawing_surface = context["drawing_surface"]
-                eraser_size = context.get("eraser_size", 50) # [FIX] Get eraser_size
+                eraser_size = context.get("eraser_size", 50) #  Get eraser_size
                 current_pos = canvas_mouse_pos
                 
-                # [FIX] Draw circle at start and end for rounded lines
+                #  Draw circle at start and end for rounded lines
                 pygame.draw.circle(drawing_surface, "White", self.last_pos, max(1, eraser_size // 2))
                 pygame.draw.circle(drawing_surface, "White", current_pos, max(1, eraser_size // 2))
                 pygame.draw.line(drawing_surface, "White", self.last_pos, current_pos, max(1, eraser_size))
@@ -187,8 +187,8 @@ class EraserTool:
         menu_open = context.get("menu_open")
         is_active = context.get("active_tool_name") == self.name
         
-        # [MODIFIED] Show active if tool is selected
-        if is_active: # [FIX] Only show yellow border if it's the active tool
+        #  Show active if tool is selected
+        if is_active: #  Only show yellow border if it's the active tool
             pygame.draw.rect(screen, (200, 200, 0), self.button.rect.inflate(4, 4))
         
         self.button.draw(screen) 

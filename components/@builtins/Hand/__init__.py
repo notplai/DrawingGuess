@@ -1,5 +1,5 @@
 import pygame
-from libs.common.components import Button
+from libs.common.components import SolidButton
 
 class HandTool:
     """
@@ -9,9 +9,8 @@ class HandTool:
     def __init__(self, rect, config):
         self.name = config["name"].lower() # "hand"
         self.config_type = config["type"] # "drawing_tool"
-        self.button = Button(
-            rect.x, rect.y, rect.width, rect.height, 
-            text=config["icon_text"], 
+        self.button = SolidButton(
+            rect.x, rect.y, rect.width, rect.height,
             bg_color=(100,100,100), 
             font_size=20,
             icon_path=config.get("icon_path")
@@ -40,16 +39,18 @@ class HandTool:
                 context["is_panning"] = True
                 context["pan_start_pos"] = mouse_pos
                 context["pan_start_offset"] = context["pan_offset"]
+                context["is_drawing"] = True # [NEW] Set drawing flag
                 return True # Consume event
 
         elif event.type == pygame.MOUSEBUTTONUP and (event.button == 1 or event.button == 2):
             # [FIX] Use context.get() for safety to prevent KeyError
             if context.get("is_panning", False):
                 context["is_panning"] = False
+                context["is_drawing"] = False # [NEW] Clear drawing flag
                 return True # Consume event
 
         elif event.type == pygame.MOUSEMOTION:
-            # [FIX] Use context.get() for safety to prevent KeyError
+            #  Use context.get() for safety to prevent KeyError
             if context.get("is_panning", False):
                 delta_x = mouse_pos[0] - context["pan_start_pos"][0]
                 delta_y = mouse_pos[1] - context["pan_start_pos"][1]

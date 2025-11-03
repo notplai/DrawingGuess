@@ -1,6 +1,5 @@
 import pygame
-from libs.common.components import Button, Slider
-from libs.common.components import InputBox # [NEW] Import InputBox
+from libs.common.components import SolidButton, SolidSlider, InputBox
 import math
 
 class PenTool:
@@ -9,10 +8,9 @@ class PenTool:
     """
     def __init__(self, rect, config):
         self.name = config["name"].lower() # "pen"
-        self.config_type = "context_tool" # [MODIFIED] Changed to context_tool
-        self.button = Button(
-            rect.x, rect.y, rect.width, rect.height, 
-            text=config["icon_text"], 
+        self.config_type = "context_tool" #  Changed to context_tool
+        self.button = SolidButton(
+            rect.x, rect.y, rect.width, rect.height,
             bg_color=(100,100,100), 
             font_size=20,
             icon_path=config.get("icon_path")
@@ -20,9 +18,9 @@ class PenTool:
         self.is_drawing_tool = True # This tool *does* draw
         self.last_pos = None
 
-        # --- [NEW] Size Picker Assets ---
-        self.modal_rect = pygame.Rect(0, 0, 280, 80) # [MODIFIED] Increased width from 250 to 280
-        self.slider = Slider(
+        # ---  Size Picker Assets ---
+        self.modal_rect = pygame.Rect(0, 0, 280, 80) #  Increased width from 250 to 280
+        self.slider = SolidSlider(
             x=self.modal_rect.x + 20, y=self.modal_rect.y + 25, 
             width=100, height=30, 
             min_val=1, max_val=40, initial_val=5
@@ -50,7 +48,7 @@ class PenTool:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.button.rect.collidepoint(event.pos):
                 
-                # [FIX] Set this tool as active, deselecting other tools
+                #  Set this tool as active, deselecting other tools
                 context["active_tool_name"] = self.name 
                 
                 if context.get("menu_open") == self.name:
@@ -100,7 +98,8 @@ class PenTool:
         # Check for click *outside* modal
         if event.type == pygame.MOUSEBUTTONDOWN and not self.modal_rect.collidepoint(mouse_pos):
             context["menu_open"] = None # Close menu
-            # Do NOT return True, allow click to pass to other tools
+            # [FIX] Do NOT fall through to drawing.
+            return False 
             
         # Consume all other motion events if mouse is over modal
         if self.modal_rect.collidepoint(mouse_pos):
@@ -124,7 +123,7 @@ class PenTool:
                 drawing_surface = context["drawing_surface"]
                 draw_color = context.get("draw_color", (0,0,0))
                 draw_size = context.get("draw_size", 5)
-                pygame.draw.circle(drawing_surface, draw_color, self.last_pos, max(1, draw_size // 2)) # [FIX] Ensure radius is at least 1
+                pygame.draw.circle(drawing_surface, draw_color, self.last_pos, max(1, draw_size // 2)) #  Ensure radius is at least 1
                 
                 return True 
 
@@ -142,7 +141,7 @@ class PenTool:
                 draw_color = context.get("draw_color", (0,0,0))
                 draw_size = context.get("draw_size", 5)
                 
-                # [FIX] Draw circle at start and end for rounded lines
+                #  Draw circle at start and end for rounded lines
                 pygame.draw.circle(drawing_surface, draw_color, self.last_pos, max(1, draw_size // 2))
                 pygame.draw.circle(drawing_surface, draw_color, canvas_mouse_pos, max(1, draw_size // 2))
                 pygame.draw.line(drawing_surface, draw_color, self.last_pos, canvas_mouse_pos, max(1, draw_size))
@@ -188,8 +187,8 @@ class PenTool:
         menu_open = context.get("menu_open")
         is_active = context.get("active_tool_name") == self.name
         
-        # [MODIFIED] Show active if tool is selected OR menu is open
-        if is_active: # [FIX] Only show yellow border if it's the active tool
+        #  Show active if tool is selected OR menu is open
+        if is_active: #  Only show yellow border if it's the active tool
             pygame.draw.rect(screen, (200, 200, 0), self.button.rect.inflate(4, 4))
         
         self.button.draw(screen) 

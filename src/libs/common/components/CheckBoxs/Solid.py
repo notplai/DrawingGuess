@@ -1,6 +1,6 @@
 import pygame
 
-class Checkbox:
+class Box:
     """
     A clickable checkbox class.
     This class is well-optimized as it renders text only once during initialization.
@@ -21,7 +21,7 @@ class Checkbox:
         except FileNotFoundError:
             self.font = pygame.font.Font(None, font_size)
 
-        # --- [GOOD OPTIMIZATION] ---
+        # ---
         # Render the label surface ONCE during creation
         self.label_surf = self.font.render(self.label, True, self.text_color)
         # Position label to the right of the box

@@ -6,7 +6,7 @@ import os
 # This adjusts the path to go up one level from 'tests' and then into 'src'
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
-from libs.common.components import Button
+from libs.common.components import SoildButton
 
 # --- Test Fixture ---
 
@@ -34,7 +34,7 @@ def test_button_creation():
     """Tests if a Button object is created with the correct properties."""
     setup_pygame()
     
-    btn = Button(10, 20, 100, 50, text="Click Me", font_size=20)
+    btn = SoildButton(10, 20, 100, 50, text="Click Me", font_size=20)
     
     assert btn.rect.x == 10
     assert btn.rect.y == 20
@@ -47,7 +47,7 @@ def test_button_is_clicked_positive():
     """Tests if the button correctly detects a click inside its area."""
     setup_pygame()
     
-    btn = Button(10, 10, 100, 50, text="Click Me")
+    btn = SoildButton(10, 10, 100, 50, text="Click Me")
     
     # Simulate a MOUSEBUTTONDOWN event at position (15, 15), which is inside the button
     mock_event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {
@@ -62,7 +62,7 @@ def test_button_is_clicked_negative_outside():
     """Tests if the button correctly ignores a click outside its area."""
     setup_pygame()
     
-    btn = Button(10, 10, 100, 50, text="Click Me")
+    btn = SoildButton(10, 10, 100, 50, text="Click Me")
     
     # Simulate a click at (200, 200), which is outside
     mock_event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {
@@ -77,7 +77,7 @@ def test_button_is_clicked_negative_wrong_event():
     """Tests if the button ignores events that aren't MOUSEBUTTONDOWN."""
     setup_pygame()
     
-    btn = Button(10, 10, 100, 50, text="Click Me")
+    btn = SoildButton(10, 10, 100, 50, text="Click Me")
     
     # Simulate a MOUSEMOTION event
     mock_event = pygame.event.Event(pygame.MOUSEMOTION, {

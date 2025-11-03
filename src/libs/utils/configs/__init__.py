@@ -4,7 +4,7 @@ import os
 def loadsConfig():
     """
     Loads settings from the JSON file.
-    Returns default settings if file is not found or corrupt.
+    Returns CuteChaos settings if file is not found or corrupt.
     """
     try:
         # Try to open and read the settings file
@@ -12,7 +12,7 @@ def loadsConfig():
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         # If file doesn't exist or is empty/broken, return defaults
-        return {"themes": "Default", "music": True}
+        return {"themes": "CuteChaos", "music": True}
 
 def savesConfig(settings):
     """

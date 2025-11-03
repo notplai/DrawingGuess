@@ -1,12 +1,17 @@
 import sys
 import pygame
-from libs.common.components import Button
+#  Import SolidButton as Button (for existing buttons)
+from libs.common.components import SolidButton, ImageButton
 from .boards.whiteboard import surface as whiteboardSurface 
+#  Import config loader to get the theme
+from libs.utils.configs import loadsConfig
 
 def surface(screen, background):
     """
     Runs the mode selection and file selection menus.
     """
+    #  Load settings to get the current theme
+    settings = loadsConfig()
     running = True
     clock = pygame.time.Clock()
     
@@ -15,7 +20,7 @@ def surface(screen, background):
     # "file" = New Whiteboard, Open
     current_view = "mode"
 
-    # --- [PERFORMANCE] ---
+    # ---
     # Create static assets ONCE
     overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 150)) 
@@ -37,37 +42,45 @@ def surface(screen, background):
     btn_height = 80
     btn_x = (screen.get_width() - btn_width) / 2
     
-    freeink_btn = Button(
+    # These buttons will still be SolidButtons because we imported `SolidButton as Button`
+    freeink_btn = SolidButton(
         x=btn_x, y=250, width=btn_width, height=btn_height,
         text="FreeInk", font_size=50
     )
     
-    guessing_btn = Button(
+    guessing_btn = SolidButton(
         x=btn_x, y=350, width=btn_width, height=btn_height,
         text="Guessing", font_size=50
     )
     
-    ai_btn = Button(
+    ai_btn = SolidButton(
         x=btn_x, y=450, width=btn_width, height=btn_height,
-        text="AI Lookup (Locked)", text_color=(150, 150, 150),  # type: ignore
+        text="AI Lookup", text_color=(150, 150, 150),  # type: ignore
         bg_color=(50, 50, 50), border_color=(100, 100, 100), font_size=50
     )
     
-    back_btn = Button(50, 50, 150, 80, text="Back", text_color='White', 
-                      bg_color=(50, 50, 50), border_color='White', font_size=50)
+    #  Use the new ImageButton for the back button
+    back_btn = ImageButton(
+        x=50, y=50,
+        image_name="back",
+        theme=settings['themes'],
+        default_width=150,
+        default_height=80
+    )
 
     # --- File Selection Buttons ---
-    new_whiteboard_btn = Button(
+    # These also remain SolidButtons
+    new_whiteboard_btn = SolidButton(
         x=btn_x, y=250, width=btn_width, height=btn_height,
-        text="New Whiteboard", font_size=50
+        text="New Canva", font_size=50
     )
     
-    open_file_btn = Button(
+    open_file_btn = SolidButton(
         x=btn_x, y=350, width=btn_width, height=btn_height,
-        text="Import or Open from File", font_size=50
+        text="Open from File", font_size=50
     )
     
-    back_file_btn = Button(
+    back_file_btn = SolidButton(
         x=btn_x, y=450, width=btn_width, height=btn_height,
         text="Back", font_size=50
     )
@@ -81,6 +94,7 @@ def surface(screen, background):
                 sys.exit()
 
             if current_view == "mode":
+                # back_btn is now an ImageButton, but .is_clicked() works the same
                 if back_btn.is_clicked(event):
                     running = False # Exit this surface
                 
@@ -95,13 +109,13 @@ def surface(screen, background):
             elif current_view == "file":
                 if new_whiteboard_btn.is_clicked(event):
                     print("Opening new whiteboard...")
-                    # [MODIFIED] Pass open_file_on_start=False (or nothing)
+                    #  Pass open_file_on_start=False (or nothing)
                     whiteboardSurface(screen, background, open_file_on_start=False)
                     # We stay here until the whiteboard is closed
                 
                 if open_file_btn.is_clicked(event):
                     print("Opening whiteboard with file dialog...")
-                    # [MODIFIED] Pass open_file_on_start=True
+                    #  Pass open_file_on_start=True
                     whiteboardSurface(screen, background, open_file_on_start=True)
                     # We stay here until the whiteboard is closed
                 

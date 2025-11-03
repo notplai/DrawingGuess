@@ -1,5 +1,5 @@
 import pygame
-from libs.common.components import Button
+from libs.common.components import SolidButton
 import math
 import colorsys
 
@@ -30,25 +30,41 @@ def create_color_wheel_surface(size):
                 surface.set_at((x, y), (rgb[0], rgb[1], rgb[2], 255))
     return surface
 
-def update_color_from_pos(mouse_pos, hsv_in, wheel_rect, bar_rect):
+def update_color_from_pos(mouse_pos, hsv_in, wheel_rect, bar_rect, drag_mode):
+    """
+    [MODIFIED] Updates H, S, or V based on the drag_mode.
+    drag_mode can be 'wheel' or 'bar'.
+    """
     h, s, v = hsv_in
-    dx, dy = mouse_pos[0] - wheel_rect.centerx, mouse_pos[1] - wheel_rect.centery
-    distance = math.sqrt(dx**2 + dy**2)
-    radius = wheel_rect.width / 2
     
-    if distance <= radius:
-        s = min(distance / radius, 1.0)
+    if drag_mode == "wheel":
+        dx, dy = mouse_pos[0] - wheel_rect.centerx, mouse_pos[1] - wheel_rect.centery
+        distance = math.sqrt(dx**2 + dy**2)
+        radius = wheel_rect.width / 2
+        
+        # Calculate saturation, clamping to 1.0 if outside
+        s = min(distance / radius, 1.0) 
+        # Always calculate angle
         angle = (math.atan2(dy, dx) / (2 * math.pi)) % 1.0
         h = angle
-    elif bar_rect.collidepoint(mouse_pos):
-        v = (mouse_pos[1] - bar_rect.y) / bar_rect.height
+        
+    elif drag_mode == "bar":
+        # [FIX] Clamp the mouse_y position to the bar's vertical limits
+        clamped_y = max(bar_rect.y, min(mouse_pos[1], bar_rect.bottom - 1))
+        
+        # Calculate relative position *after* clamping
+        relative_y = clamped_y - bar_rect.y 
+        
+        # Use (height - 1) because the pixel range is 0 to (height - 1)
+        denominator = max(1, bar_rect.height - 1)
+        v = 1.0 - (relative_y / denominator)
         v = max(0.0, min(v, 1.0))
         
     new_hsv = (h, s, v)
     return new_hsv, hsv_to_rgb(new_hsv[0], new_hsv[1], new_hsv[2])
 
 
-class ColorPad:
+class ColorPalette:
     """
     A context tool that provides a color picker pop-up.
     It modifies the 'draw_color' in the shared context.
@@ -56,9 +72,8 @@ class ColorPad:
     def __init__(self, rect, config):
         self.name = config["name"].lower() # "colorpad"
         self.config_type = config["type"] # [NEW] Store the tool type
-        self.button = Button(
+        self.button = SolidButton(
             rect.x, rect.y, rect.width, rect.height, # [FIX] Changed rect.Y to rect.y
-            text=config["icon_text"], 
             bg_color=(100,100,100), 
             font_size=20,
             icon_path=config.get("icon_path") # [NEW] Pass icon path
@@ -77,7 +92,8 @@ class ColorPad:
         
         self.current_color_swatch_rect = pygame.Rect(self.value_bar_rect.right + 20, self.wheel_rect.y, 180, 80) # [MODIFIED] Increased width from 140 to 180
         
-        self.recent_colors = [(0,0,0), (255,0,0), (0,255,0), (0,0,255), (255,255,0)]
+        # [MODIFIED] Set default color to Red (100% brightness) and move Black to end
+        self.recent_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (0, 0, 0)]
         self.recent_swatches_pos = []
         self.RECENT_SWATCH_RADIUS = 15
         self.swatch_gap = 10
@@ -126,17 +142,29 @@ class ColorPad:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             # Use the *real* mouse_pos for modal collision
             if self.modal_rect.collidepoint(mouse_pos): 
-                # Check wheel or bar
-                if self.wheel_rect.collidepoint(mouse_pos) or self.value_bar_rect.collidepoint(mouse_pos):
-                    if self.wheel_rect.collidepoint(mouse_pos): self.is_dragging_wheel = True
-                    if self.value_bar_rect.collidepoint(mouse_pos): self.is_dragging_bar = True
+                
+                # [MODIFIED] Implement drag locking
+                # Only start a new drag if we are not already dragging
+                drag_mode = None
+                if not self.is_dragging_wheel and not self.is_dragging_bar:
+                    # [MODIFIED] Use inflated rect for bar
+                    check_bar_rect = self.value_bar_rect.inflate(40, 10)
                     
-                    hsv, rgb = update_color_from_pos(mouse_pos, context["current_hsv"], self.wheel_rect, self.value_bar_rect)
+                    if self.wheel_rect.collidepoint(mouse_pos):
+                        self.is_dragging_wheel = True
+                        drag_mode = "wheel" # Set drag mode
+                    elif check_bar_rect.collidepoint(mouse_pos): 
+                        self.is_dragging_bar = True
+                        drag_mode = "bar" # Set drag mode
+                
+                if self.is_dragging_wheel or self.is_dragging_bar:
+                    # Update color immediately on click
+                    hsv, rgb = update_color_from_pos(mouse_pos, context["current_hsv"], self.wheel_rect, self.value_bar_rect, drag_mode)
                     context["current_hsv"] = hsv
                     context["draw_color"] = rgb
                 
-                # Check recent swatches
-                else:
+                # Check recent swatches (only if not dragging)
+                elif not (self.is_dragging_wheel or self.is_dragging_bar):
                     for i, pos in enumerate(self.recent_swatches_pos):
                         if math.dist(pos, mouse_pos) <= self.RECENT_SWATCH_RADIUS:
                             rgb = self.recent_colors[i]
@@ -147,29 +175,42 @@ class ColorPad:
                 
                 return True # Consume click inside modal
 
-        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1: # [FIX] Was pygame.MOUSEUP
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1: 
             if self.is_dragging_wheel or self.is_dragging_bar:
                 self.add_recent_color(context["draw_color"])
                 self.is_dragging_wheel = False
                 self.is_dragging_bar = False
                 return True # Consume event
-            # [FIX] Also consume mouseup if click was on recent
-            # Check if mouseup was on a recent swatch
-            for i, pos in enumerate(self.recent_swatches_pos):
-                if math.dist(pos, mouse_pos) <= self.RECENT_SWATCH_RADIUS:
-                    return True # Consume
+            
             # Consume mouseup if inside modal
             if self.modal_rect.collidepoint(mouse_pos):
                 return True
 
         elif event.type == pygame.MOUSEMOTION:
-            if self.is_dragging_wheel or self.is_dragging_bar:
-                hsv, rgb = update_color_from_pos(mouse_pos, context["current_hsv"], self.wheel_rect, self.value_bar_rect)
+            # [MODIFIED] Handle continuous dragging for both wheel and bar
+            drag_mode = None
+            if self.is_dragging_wheel:
+                drag_mode = "wheel"
+            elif self.is_dragging_bar:
+                drag_mode = "bar"
+            
+            if drag_mode:
+                hsv, rgb = update_color_from_pos(mouse_pos, context["current_hsv"], self.wheel_rect, self.value_bar_rect, drag_mode)
                 context["current_hsv"] = hsv
                 context["draw_color"] = rgb
                 return True # Consume event
         
-        # [NEW] Consume all *other* events (like mousemotion) if mouse is inside modal rect
+        # --- [NEW LOGIC] ---
+        # Check for click *outside* modal to close it
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if not self.modal_rect.collidepoint(mouse_pos):
+                context["menu_open"] = None # Close menu
+                self.is_dragging_wheel = False # Also stop dragging
+                self.is_dragging_bar = False
+                return False # Do not consume, allow click-through
+        # --- [END NEW LOGIC] ---
+        
+        # Consume all *other* events (like mousemotion) if mouse is inside modal rect
         if self.modal_rect.collidepoint(mouse_pos):
              return True
         
@@ -220,7 +261,8 @@ class ColorPad:
             # --- Draw Value (Brightness) Bar ---
             base_color = hsv_to_rgb(h, s, 1.0) # Color at full brightness
             for i in range(self.BAR_HEIGHT):
-                bar_v = i / self.BAR_HEIGHT
+                # [MODIFIED] Invert gradient. Top (i=0) is 1.0, Bottom is 0.0
+                bar_v = 1.0 - (i / self.BAR_HEIGHT)
                 bar_color = hsv_to_rgb(h, s, bar_v)
                 pygame.draw.line(screen, bar_color, (self.value_bar_rect.x, self.value_bar_rect.y + i), (self.value_bar_rect.right, self.value_bar_rect.y + i))
             
@@ -230,7 +272,14 @@ class ColorPad:
             pygame.draw.circle(screen, (0,0,0), (indicator_x, indicator_y), 7, 2)
             pygame.draw.circle(screen, (255,255,255), (indicator_x, indicator_y), 5, 2)
             
-            indicator_y = self.value_bar_rect.y + (v * self.BAR_HEIGHT)
+            # [MODIFIED] Invert indicator position.
+            # When v=1.0 (light), (1.0 - v) is 0, so y is at the top.
+            # When v=0.0 (dark), (1.0 - v) is 1.0, so y is at the bottom.
+            # [FIX] Clamp indicator Y to be inside the bar
+            indicator_y_relative = (1.0 - v) * self.BAR_HEIGHT
+            indicator_y = self.value_bar_rect.y + indicator_y_relative
+            indicator_y = max(self.value_bar_rect.y, min(indicator_y, self.value_bar_rect.bottom -1))
+            
             pygame.draw.line(screen, (0,0,0), (self.value_bar_rect.left, indicator_y), (self.value_bar_rect.right, indicator_y), 4)
             pygame.draw.line(screen, (255,255,255), (self.value_bar_rect.left, indicator_y), (self.value_bar_rect.right, indicator_y), 2)
             

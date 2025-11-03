@@ -1,11 +1,11 @@
 import pygame
-from libs.common.components import Button, Slider # [MODIFIED] Import Slider
-from libs.common.kits import loads as load_kits # [NEW] Import new loader
-import math # For lerping
-import sys # [NEW] Import sys for exiting
-import pickle # [NEW] For saving/loading .vecbo files
+from libs.common.components import SolidButton, SolidSlider
+from libs.common.kits import loads as load_kits
+import math
+import sys
+import pickle # For saving/loading .vecbo files
 
-# [NEW] Import tkinter for native file dialogs
+# Import tkinter for native file dialogs
 try:
     import tkinter as tk
     from tkinter import filedialog
@@ -14,7 +14,7 @@ try:
         root = tk.Tk()
         root.withdraw() # Hide the main window
         try:
-            # [FIX] This line can fail on some macOS versions
+            #  This line can fail on some macOS versions
             root.call('wm', 'attributes', '.', '-topmost', True) # Keep dialog on top
         except Exception as e:
             print(f"Warning: Could not set topmost attribute for tkinter: {e}")
@@ -23,7 +23,7 @@ except ImportError:
     print("Warning: tkinter module not found. File dialogs will not work.")
     tk = None # Set tk to None to check later
 
-# --- [NEW] Coordinate Helper Functions ---
+# --- Coordinate Helper Functions ---
 def screen_to_canvas(screen_pos, zoom, offset):
     """Converts a screen coordinate (e.g., mouse_pos) to a canvas coordinate."""
     return (
@@ -43,7 +43,7 @@ def lerp(a, b, t):
     """Linearly interpolate from a to b by t."""
     return a + (b - a) * t
 
-# [MODIFIED] Added open_file_on_start parameter
+#  Added open_file_on_start parameter
 def surface(screen, background, open_file_on_start=False):
     """
     The main Whiteboard surface.
@@ -55,7 +55,7 @@ def surface(screen, background, open_file_on_start=False):
     screen_width = screen.get_width()
     screen_height = screen.get_height()
     
-    # --- [NEW] File and Dialog State ---
+    # --- File and Dialog State ---
     current_project_path = None # Path to the loaded .vecbo file, if any
     is_dirty = False # True if changes have been made since last save/load
     dialog_state = None # None, "confirm_action"
@@ -71,11 +71,11 @@ def surface(screen, background, open_file_on_start=False):
         dialog_title_font = pygame.font.Font(None, 28)
 
     # --- State Management ---
-    # [NEW] Shared context for all tools
+    # Shared context for all tools
     shared_tool_context = {
         "screen": screen,
-        "draw_color": (0, 0, 0),
-        "current_hsv": (0.0, 0.0, 0.0),
+        "draw_color": (255, 0, 0), #  Default to Red
+        "current_hsv": (0.0, 1.0, 1.0), #  Default to Red
         "draw_size": 5,
         "eraser_size": 50,
         "active_tool_name": "pen", # Default tool
@@ -87,19 +87,19 @@ def surface(screen, background, open_file_on_start=False):
         "drawing_surface": None, # Will be set below
         "add_history": None, # Will be set below
         
-        # --- [NEW] Zoom and Pan State ---
+        # --- Zoom and Pan State ---
         "zoom_level": 1.0,  # 1.0 = 100%
         "pan_offset": (0, 0),
         "canvas_mouse_pos": (0, 0), # Mouse pos transformed to canvas space
         
-        # --- [NEW] Panning and Tool Switching State ---
+        # --- Panning and Tool Switching State ---
         "is_panning": False,
         "pan_start_pos": (0, 0),
         "pan_start_offset": (0, 0),
         "previous_tool_name": "pen" # For spacebar switching
     }
     
-    # [FIX] Removed local menu_open variable. Will use context directly.
+    #  Removed local menu_open variable. Will use context directly.
     history_scroll_offset = 0
     
     # --- Drawing Surface ---
@@ -125,7 +125,7 @@ def surface(screen, background, open_file_on_start=False):
             history_index -= 1
         print(f"History added: {action_name}. Index: {history_index}, Total: {len(history)}")
     
-    # [NEW] Pass history function to context
+    # Pass history function to context
     shared_tool_context["add_history"] = add_history_state
 
     def undo():
@@ -156,10 +156,10 @@ def surface(screen, background, open_file_on_start=False):
         shared_tool_context["drawing_surface"] = drawing_surface
         print("Canvas Cleared")
     
-    # --- [NEW] File Operations ---
+    # --- File Operations ---
     
     def open_file():
-        # [MODIFIED] Need to access history and history_index
+        #  Need to access history and history_index
         nonlocal drawing_surface, current_project_path, is_dirty, history, history_index
         if not tk: return
         root = get_tk_root()
@@ -179,7 +179,7 @@ def surface(screen, background, open_file_on_start=False):
                 with open(file_path, 'rb') as f:
                     loaded_data = pickle.load(f)
                 
-                # [MODIFIED] Check for new format (dict) vs old (Surface)
+                #  Check for new format (dict) vs old (Surface)
                 if isinstance(loaded_data, dict):
                     # New format
                     drawing_surface = loaded_data["main_surface"]
@@ -205,10 +205,10 @@ def surface(screen, background, open_file_on_start=False):
                 drawing_surface.blit(img, (0,0))
                 current_project_path = None # It's an import, not a project
                 print(f"Imported image: {file_path}")
-                # [FIX] Add history state for image import
+                #  Add history state for image import
                 add_history_state(f"Import {file_path.split('/')[-1]}")
 
-            # [FIX] Don't add history state here for .vecbo, it's loaded
+            #  Don't add history state here for .vecbo, it's loaded
             if not file_path.endswith(".vecbo"):
                 add_history_state(f"Open {file_path.split('/')[-1]}")
                 
@@ -216,7 +216,7 @@ def surface(screen, background, open_file_on_start=False):
 
         except Exception as e:
             print(f"Error opening file {file_path}: {e}")
-            # [TODO] Show an error dialog to the user
+            # Show an error dialog to the user
     
     def save_vecbo():
         nonlocal is_dirty
@@ -224,7 +224,7 @@ def surface(screen, background, open_file_on_start=False):
             save_as_vecbo() # If no path, just do "Save As"
         else:
             try:
-                # [MODIFIED] Save data as a dictionary
+                #  Save data as a dictionary
                 data_to_save = {
                     "main_surface": drawing_surface,
                     "history_stack": history,
@@ -273,7 +273,7 @@ def surface(screen, background, open_file_on_start=False):
         except Exception as e:
             print(f"Error exporting image: {e}")
 
-    # --- [NEW] Dialog Creation ---
+    # --- Dialog Creation ---
     def set_dialog(state, pending_action):
         nonlocal dialog_state, dialog_pending_action, dialog_buttons
         dialog_state = state
@@ -287,11 +287,11 @@ def surface(screen, background, open_file_on_start=False):
         total_w = (btn_w * 3) + (btn_gap * 2)
         start_x = dialog_rect.centerx - (total_w / 2)
         
-        save_btn = Button(start_x, btn_y, btn_w, btn_h, "Save (.vecbo)", font_size=18, bg_color=(0, 150, 255))
-        export_btn = Button(start_x + btn_w + btn_gap, btn_y, btn_w, btn_h, "Export (.png)", font_size=18, bg_color=(100, 100, 100))
-        dont_save_btn = Button(start_x + (btn_w + btn_gap)*2, btn_y, btn_w, btn_h, "Don't Save", font_size=18, bg_color=(200, 50, 50))
+        save_btn = SolidButton(start_x, btn_y, btn_w, btn_h, "Save (.vecbo)", font_size=18, bg_color=(0, 150, 255))
+        export_btn = SolidButton(start_x + btn_w + btn_gap, btn_y, btn_w, btn_h, "Export (.png)", font_size=18, bg_color=(100, 100, 100))
+        dont_save_btn = SolidButton(start_x + (btn_w + btn_gap)*2, btn_y, btn_w, btn_h, "Don't Save", font_size=18, bg_color=(200, 50, 50))
         
-        cancel_btn = Button(dialog_rect.right - 90, dialog_rect.bottom - 50, 80, 40, "Cancel", font_size=18, bg_color=(220, 220, 220), text_color=(0,0,0)) # type: ignore
+        cancel_btn = SolidButton(dialog_rect.right - 90, dialog_rect.bottom - 50, 80, 40, "Cancel", font_size=18, bg_color=(220, 220, 220), text_color=(0,0,0)) # type: ignore
         
         # If no project path, "Save" should act as "Save As"
         if not current_project_path:
@@ -306,11 +306,11 @@ def surface(screen, background, open_file_on_start=False):
 
     # --- Top Menu Bar ---
     top_bar_rect = pygame.Rect(0, 0, screen_width, 40)
-    file_btn = Button(0, 0, 80, 40, "File", bg_color=(200, 200, 200), text_color=(0,0,0), font_size=25) # type: ignore
-    history_btn = Button(80, 0, 100, 40, "History", bg_color=(200, 200, 200), text_color=(0,0,0), font_size=25) # type: ignore
+    file_btn = SolidButton(0, 0, 80, 40, "File", bg_color=(200, 200, 200), text_color=(0,0,0), font_size=25) # type: ignore
+    history_btn = SolidButton(80, 0, 100, 40, "History", bg_color=(200, 200, 200), text_color=(0,0,0), font_size=25) # type: ignore
     
     # --- File Menu Buttons ---
-    # [MODIFIED] These are now created dynamically
+    #  These are now created dynamically
     file_menu_buttons = []
     file_menu_hot_zone = [file_btn.rect] # Start with just the file button
 
@@ -335,10 +335,10 @@ def surface(screen, background, open_file_on_start=False):
     toolbar_visible_y = screen_height - toolbar_height
     toolbar_rect = pygame.Rect(0, toolbar_visible_y, screen_width, toolbar_height)
     
-    # --- [NEW] Plugin Loading ---
+    # --- Plugin Loading ---
     loaded_tool_plugins = load_kits(components_dir="components") # List of (config, Class)
     
-    # [FIX] Separate button tools from UI component tools
+    #  Separate button tools from UI component tools
     loaded_tool_instances = [] # This will hold Pen, Eraser, ColorPad
     zoom_tool_instance = None # This will hold the ZoomTool
     
@@ -346,7 +346,7 @@ def surface(screen, background, open_file_on_start=False):
     toolbar_btn_x = 20
     toolbar_btn_y = 10
     toolbar_btn_size = 60
-    toolbar_btn_gap = 20 # [MODIFIED] Increased from 10 to 20 for better spacing
+    toolbar_btn_gap = 20 #  Increased from 10 to 20 for better spacing
     
     for config, ToolClass in loaded_tool_plugins:
         # Create the button rect for the tool
@@ -355,6 +355,9 @@ def surface(screen, background, open_file_on_start=False):
         # Instantiate the tool
         tool_instance = ToolClass(btn_rect, config)
 
+        # Store the config on the instance so we can access it later
+        tool_instance.config = config
+
         if hasattr(tool_instance, 'config_type') and tool_instance.config_type == "ui_component":
             zoom_tool_instance = tool_instance # Save it separately
             # Don't advance toolbar_btn_x
@@ -362,21 +365,66 @@ def surface(screen, background, open_file_on_start=False):
             loaded_tool_instances.append(tool_instance)
             # Advance the position for the next button
             toolbar_btn_x += toolbar_btn_size + toolbar_btn_gap
+            
+    # Load Custom Cursors ---
+    # After instantiating tools, loop again to load their cursor assets
+    print("Loading custom cursors...")
+    for tool in loaded_tool_instances:
+        tool.custom_cursor_surf = None #  Store the surface, not a Cursor object
+        tool.custom_cursor_hotspot = (0, 0) # Store the hotspot
+        tool.custom_cursor_offset = (0, 0) # Store the offset
+        cursor_path = tool.config.get("cursor_path")
+        
+        if cursor_path:
+            try:
+                # Load the cursor image
+                cursor_surf = pygame.image.load(cursor_path).convert_alpha()
+                
+                #  Read cursor size from config, default to 64x64
+                cursor_size = tool.config.get("cursor_size")
+                if not cursor_size:
+                    # If not specified, check if it's oversized
+                    if cursor_surf.get_width() > 64 or cursor_surf.get_height() > 64:
+                        cursor_size = (64, 64) # Default scaling for large images
+                
+                if cursor_size:
+                    try:
+                        cursor_surf = pygame.transform.smoothscale(cursor_surf, cursor_size)
+                    except: # Fallback for 1x1 images etc.
+                        cursor_surf = pygame.transform.scale(cursor_surf, cursor_size)
+
+                #  Read hotspot from config
+                hotspot_config = tool.config.get("cursor_hotspot")
+                hotspot = (0, 0)
+                if hotspot_config == "center":
+                    hotspot = (cursor_surf.get_width() // 2, cursor_surf.get_height() // 2)
+                
+                #  Store the surface and hotspot
+                tool.custom_cursor_surf = cursor_surf
+                tool.custom_cursor_hotspot = hotspot
+                # Store the offset
+                tool.custom_cursor_offset = tool.config.get("cursor_offset", (0, 0)) 
+                print(f"  Successfully loaded cursor surface for: {tool.name}")
+            except Exception as e:
+                print(f"Warning: Could not load cursor surface for {tool.name} at {cursor_path}: {e}")
+                
+    # Find the hand tool for quick access
+    hand_tool_instance = next((t for t in loaded_tool_instances if t.name == "hand"), None)
     
-    # --- [NEW] Zoom UI ---
+    # --- Zoom UI ---
     # The ZoomTool instance now controls the slider
-    zoom_slider_x_start = 0 # Will be set
+    zoom_slider_x_start = 0 #  Renamed variable
     if zoom_tool_instance:
-        zoom_slider_x_start = toolbar_btn_x + 50 # [MODIFIED] Increased gap from 30 to 50
+        zoom_slider_x_start = toolbar_btn_x + 50 #  Renamed variable
         # Tell the zoom tool its correct X, Y position
         zoom_tool_instance.update_button_pos(zoom_slider_x_start, toolbar_hidden_y + 25)
     
-    # --- [NEW] Zoom Helper Function ---
+    # --- Zoom Helper Function ---
     def set_zoom(new_zoom, pivot_pos):
         """Helper to set zoom and recalculate pan offset to pivot on pivot_pos."""
-        nonlocal shared_tool_context, zoom_tool_instance # [MODIFIED]
+        nonlocal shared_tool_context, zoom_tool_instance # 
         
-        new_zoom = max(0.01, min(2.0, new_zoom)) # Clamp zoom
+        new_zoom = max(1.0, min(2.0, new_zoom)) # Clamp zoom  Min zoom is 1.0
         
         current_zoom = shared_tool_context["zoom_level"]
         current_offset = shared_tool_context["pan_offset"]
@@ -392,12 +440,12 @@ def surface(screen, background, open_file_on_start=False):
 
         shared_tool_context["zoom_level"] = new_zoom
         shared_tool_context["pan_offset"] = new_offset
-        if zoom_tool_instance: # [MODIFIED]
-            zoom_tool_instance.slider.set_value(new_zoom) # [MODIFIED]
+        if zoom_tool_instance: # 
+            zoom_tool_instance.slider.set_value(new_zoom) #  Changed .SolidSlider to .slider
             
     # --- Main Loop ---
     
-    # [NEW] Handle open_file_on_start
+    # Handle open_file_on_start
     if open_file_on_start:
         pygame.time.set_timer(pygame.USEREVENT + 1, 100, 1) # Schedule open_file
 
@@ -409,13 +457,13 @@ def surface(screen, background, open_file_on_start=False):
         # --- Update Shared Context ---
         shared_tool_context["mouse_pos"] = mouse_pos
         
-        # --- [NEW] Update Zoom/Pan Context ---
+        # --- Update Zoom/Pan Context ---
         zoom = shared_tool_context["zoom_level"]
         offset = shared_tool_context["pan_offset"]
         canvas_mouse_pos = screen_to_canvas(mouse_pos, zoom, offset)
         shared_tool_context["canvas_mouse_pos"] = canvas_mouse_pos
         
-        # --- [NEW] Dynamic File Menu ---
+        # --- Dynamic File Menu ---
         if shared_tool_context["menu_open"] == "file":
             file_menu_buttons = []
             file_menu_hot_zone = [file_btn.rect]
@@ -425,7 +473,7 @@ def surface(screen, background, open_file_on_start=False):
             
             def add_file_btn(text):
                 nonlocal btn_y
-                btn = Button(0, btn_y, btn_w, btn_h, text, bg_color=(220, 220, 220), text_color=(0,0,0), font_size=20, text_align="left") # type: ignore
+                btn = SolidButton(0, btn_y, btn_w, btn_h, text, bg_color=(220, 220, 220), text_color=(0,0,0), font_size=20, text_align="left") # type: ignore
                 file_menu_buttons.append(btn)
                 file_menu_hot_zone.append(btn.rect)
                 btn_y += btn_h
@@ -439,11 +487,16 @@ def surface(screen, background, open_file_on_start=False):
             add_file_btn("Back to Main Menu")
 
         # --- Toolbar Animation Logic ---
-        # [FIX] Read directly from context
-        # [MODIFIED] Keep toolbar open if a dialog is active
+        is_drawing = shared_tool_context["is_drawing"] # Get the drawing state
+
         if shared_tool_context["menu_open"] is not None or dialog_state is not None:
+            # Keep toolbar open if a dialog or menu is active
             toolbar_target_y = toolbar_visible_y
+        elif is_drawing:
+            # [NEW] Keep toolbar HIDDEN if the user is actively drawing
+            toolbar_target_y = toolbar_hidden_y
         else:
+            # Normal hover behavior
             if mouse_pos[1] > screen_height - 20 or toolbar_rect.collidepoint(mouse_pos):
                 toolbar_target_y = toolbar_visible_y
             else:
@@ -454,21 +507,21 @@ def surface(screen, background, open_file_on_start=False):
         shared_tool_context["toolbar_current_y"] = toolbar_rect.y
         
         # --- Update Tool Button Positions (for animation) ---
-        for tool in loaded_tool_instances: # [FIX] This list no longer contains ZoomTool
-            # [FIX] Update the button's Y position based on its *original* X
+        for tool in loaded_tool_instances: #  This list no longer contains ZoomTool
+            #  Update the button's Y position based on its *original* X
             tool.update_button_pos(tool.button.rect.x, toolbar_rect.y + 10)
         
-        # --- [NEW] Update Zoom Slider Position ---
-        if zoom_tool_instance: # [MODIFIED]
-            zoom_tool_instance.update_button_pos(zoom_slider_x_start, toolbar_rect.y + 25) # [MODIFIED]
+        # --- Update Zoom Slider Position ---
+        if zoom_tool_instance: # 
+            zoom_tool_instance.update_button_pos(zoom_slider_x_start, toolbar_rect.y + 25) #  Renamed variable
 
         # --- Event Handling ---
         
-        # [NEW] Refactored Event Loop
+        # Refactored Event Loop
         # 1. Reset UI click flag for this frame
         shared_tool_context["click_on_ui"] = False
         
-        # [NEW] STAGE 0: Handle Dialog Clicks
+        # STAGE 0: Handle Dialog Clicks
         if dialog_state is not None:
             for event in events[:]:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -515,35 +568,36 @@ def surface(screen, background, open_file_on_start=False):
         if not dialog_state: # Only process normal events if dialog is closed
             for event in events[:]:
                 
-                # --- [NEW] Handle scheduled event for opening file ---
+                # --- Handle scheduled event for opening file ---
                 if event.type == pygame.USEREVENT + 1:
                     open_file()
                     pygame.time.set_timer(pygame.USEREVENT + 1, 0) # Stop timer
                     continue
 
-                # --- [FIX] REMOVED REDUNDANT MOUSEBUTTONUP LOGIC ---
-                # This block was conflicting with the event logic in STAGE C.
-                # The zoom slider event is already handled correctly in STAGE B.
-                
                 if event.type == pygame.QUIT:
                     if is_dirty:
                         set_dialog("confirm_action", "exit")
                         shared_tool_context["click_on_ui"] = True
                     else:
                         running = False
-
+                
+                #  Added a check to consume events if UI was clicked this frame
                 if shared_tool_context["click_on_ui"]:
                     if event in events: events.remove(event)
                     continue
 
-                # [REMOVED] Panning start/motion logic is now in Hand tool
-                # if event.type == pygame.MOUSEBUTTONDOWN and event.button == 2: ...
-                # elif event.type == pygame.MOUSEMOTION:
-                #     if is_panning: ...
+                # ---  Pass event to ZoomTool (which handles mouse wheel) ---
+                #  The zoom tool *also* handles keyboard shortcuts, so it
+                # needs to be processed before the main keydown logic.
+                if zoom_tool_instance and zoom_tool_instance.handle_event(event, shared_tool_context):
+                    shared_tool_context["click_on_ui"] = True # Consume event
+                
+                if shared_tool_context["click_on_ui"]:
+                    if event in events: events.remove(event)
+                    continue
 
-                # --- [MODIFIED] Mouse Wheel Scrolling (for History or Zoom) ---
+                # ---  Mouse Wheel Scrolling (for History) ---
                 if event.type == pygame.MOUSEWHEEL:
-                    
                     # 1. Check if scrolling over history menu
                     if shared_tool_context["menu_open"] == "history" and history_placeholder_rect.collidepoint(mouse_pos):
                         if event.y > 0: history_scroll_offset = max(0, history_scroll_offset - 1)
@@ -558,22 +612,19 @@ def surface(screen, background, open_file_on_start=False):
                         # Do nothing, but consume the scroll
                         shared_tool_context["click_on_ui"] = True
                     
-                    # 3. Otherwise, zoom the canvas
-                    else:
-                        current_zoom = shared_tool_context["zoom_level"]
-                        if event.y > 0: # Scroll Up
-                            set_zoom(min(2.0, current_zoom + 0.1), mouse_pos)
-                        elif event.y < 0: # Scroll Down
-                            set_zoom(max(0.01, current_zoom - 0.1), mouse_pos)
-                        shared_tool_context["click_on_ui"] = True
+                    # Zooming is now handled by the ZoomTool instance
                 
-                # --- Keyboard Shortcuts (Undo/Redo/Zoom/Pan) ---
+                if shared_tool_context["click_on_ui"]:
+                    if event in events: events.remove(event)
+                    continue
+                
+                # --- Keyboard Shortcuts (Undo/Redo/Pan) ---
                 if event.type == pygame.KEYDOWN:
                     mods = pygame.key.get_mods()
                     is_ctrl_or_cmd = mods & pygame.KMOD_CTRL or mods & pygame.KMOD_META
                     is_shift = mods & pygame.KMOD_SHIFT
                     
-                    # [NEW] Spacebar Panning (Hold)
+                    # Spacebar Panning (Hold)
                     if event.key == pygame.K_SPACE:
                         if shared_tool_context["active_tool_name"] != "hand":
                             shared_tool_context["previous_tool_name"] = shared_tool_context["active_tool_name"]
@@ -588,25 +639,15 @@ def surface(screen, background, open_file_on_start=False):
                     elif event.key == pygame.K_y:
                         if is_ctrl_or_cmd and not is_shift: redo()
                     
-                    # [NEW] Export Shortcut
+                    # Export Shortcut
                     elif event.key == pygame.K_e and is_shift:
                         export_as_image()
-
-                    # [MODIFIED] Zoom Shortcuts
-                    elif event.key == pygame.K_0 and is_ctrl_or_cmd:
-                        # [FIX] Just reset state, don't pivot
-                        shared_tool_context["zoom_level"] = 1.0
-                        shared_tool_context["pan_offset"] = (0, 0)
-                        if zoom_tool_instance: # [MODIFIED]
-                            zoom_tool_instance.slider.set_value(1.0) # [MODIFIED]
-                    elif event.key == pygame.K_EQUALS and is_ctrl_or_cmd:
-                        set_zoom(shared_tool_context["zoom_level"] + 0.25, mouse_pos)
-                    elif event.key == pygame.K_MINUS and is_ctrl_or_cmd:
-                        set_zoom(shared_tool_context["zoom_level"] - 0.25, mouse_pos)
+                    
+                    # Zoom shortcuts are now handled by ZoomTool
                     
                     shared_tool_context["click_on_ui"] = True # Consume key events
                 
-                # [NEW] Spacebar Panning (Release)
+                # Spacebar Panning (Release)
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_SPACE:
                         if shared_tool_context["active_tool_name"] == "hand":
@@ -614,6 +655,10 @@ def surface(screen, background, open_file_on_start=False):
                             shared_tool_context["is_panning"] = False # Stop panning
                         shared_tool_context["click_on_ui"] = True # Consume
                 
+                if shared_tool_context["click_on_ui"]:
+                    if event in events: events.remove(event)
+                    continue
+
                 # --- STAGE 1: Check for clicks on Whiteboard UI (Top Bar, Menus) ---
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     if file_btn.is_clicked(event):
@@ -696,19 +741,11 @@ def surface(screen, background, open_file_on_start=False):
                         if event in events: events.remove(event)
                         continue 
                 
-                # --- B. No tool menu is open. Check tool buttons AND Zoom Slider. ---
+                # --- B. No tool menu is open. Check tool buttons. ---
                 tool_button_was_clicked = False
                 
-                # [ADDED BACK] Check zoom slider first
-                if zoom_tool_instance and zoom_tool_instance.handle_event(event, shared_tool_context): # [MODIFIED]
-                    new_zoom = zoom_tool_instance.slider.get_value() # [MODIFIED]
-                    set_zoom(new_zoom, (screen_width / 2, screen_height / 2))
-                    shared_tool_context["click_on_ui"] = True
-                    tool_button_was_clicked = True # Technically UI, not a "tool"
-                
-                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    for tool in loaded_tool_instances: # [FIX] This list no longer contains ZoomTool
-                        # [REVERTED] Check tool buttons
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    for tool in loaded_tool_instances: 
                         if tool.button.rect.collidepoint(event.pos):
                             if tool.handle_event(event, shared_tool_context):
                                 shared_tool_context["click_on_ui"] = True
@@ -720,7 +757,7 @@ def surface(screen, background, open_file_on_start=False):
                     continue
                 
                 # --- STAGE D: Handle "Click Outside" ---
-                # [REFACTORED] This logic is now only for File/History menus.
+                # This logic is now only for File/History menus.
                 # Context tools (like ColorPad) now handle their own "click outside".
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     menu = shared_tool_context["menu_open"]
@@ -752,15 +789,14 @@ def surface(screen, background, open_file_on_start=False):
                         break
                 
                 if active_tool_instance:
-                    # [FIX] REMOVED 'is_lmb_or_mmb_up' check.
-                    # This allows MOUSEBUTTONUP events to be passed to the
-                    # active tool (like HandTool) so it can stop panning.
-                    
                     is_space_up = (event.type == pygame.KEYUP and event.key == pygame.K_SPACE)
 
                     if not is_space_up: # Still need to block spacebar release
                         if active_tool_instance.handle_event(event, shared_tool_context):
-                            shared_tool_context["click_on_ui"] = True
+                            #  This should NOT be click_on_ui
+                            # This flag is for *consuming* the event so it
+                            # doesn't fall through, not for blocking drawing.
+                            if event in events: events.remove(event)
                 
                 if shared_tool_context["click_on_ui"]:
                     if event in events: events.remove(event)
@@ -781,10 +817,10 @@ def surface(screen, background, open_file_on_start=False):
                 
         # --- Drawing ---
         
-        # [MODIFIED] Fill background. Gray is better to see canvas edges.
+        #  Fill background. Gray is better to see canvas edges.
         screen.fill((80, 80, 80)) 
         
-        # --- [NEW] Draw Scaled Canvas ---
+        # --- Draw Scaled Canvas ---
         zoom = shared_tool_context["zoom_level"]
         offset = shared_tool_context["pan_offset"]
         
@@ -802,13 +838,12 @@ def surface(screen, background, open_file_on_start=False):
             # Fallback if zoom is tiny
             screen.fill("White") 
         
-        # --- Draw Custom Cursor ---
+        # ---  Set Custom Cursor ---
         is_on_canvas = (
             not top_bar_rect.collidepoint(mouse_pos) and
             not toolbar_rect.collidepoint(mouse_pos) and
             shared_tool_context["menu_open"] is None and
-            not shared_tool_context["is_panning"] and # [MODIFIED] Check context
-            dialog_state is None # [NEW] Hide cursor when dialog is open
+            dialog_state is None
         )
         
         active_tool_instance = None
@@ -817,46 +852,81 @@ def surface(screen, background, open_file_on_start=False):
             if tool.name == active_name:
                 active_tool_instance = tool
                 break
-        
-        # [MODIFIED] Show circle cursor ONLY if a drawing tool is active
-        if is_on_canvas and active_tool_instance and active_tool_instance.is_drawing_tool:
-            pygame.mouse.set_visible(False)
-            
-            radius = 0
-            fill_color = (0,0,0)
-            
-            if active_name == "pen":
-                radius = shared_tool_context["draw_size"] // 2
-                fill_color = shared_tool_context["draw_color"]
-            elif active_name == "eraser":
-                radius = shared_tool_context["eraser_size"] // 2
-                fill_color = (255, 255, 255)
-            
-            # [NEW] Scale cursor radius by zoom level
-            screen_radius = max(1, int(radius * zoom))
 
-            # [FIX] Draw a consistent, high-contrast stroked ring
-            # that is visible on all backgrounds, removing the
-            # distracting color-inverting logic.
-            
-            # 1. Draw the fill color (Pen or Eraser)
-            pygame.draw.circle(screen, fill_color, mouse_pos, screen_radius)
-            
-            # 2. Draw an outer black ring (2px)
-            pygame.draw.circle(screen, (0, 0, 0), mouse_pos, screen_radius, width=2)
-            
-            # 3. Draw an inner white ring (1px)
-            if screen_radius > 3: # Only draw inner ring if there's space
-                pygame.draw.circle(screen, (255, 255, 255), mouse_pos, screen_radius - 2, width=1)
+        #  Handle all cursor drawing logic
         
-        # [NEW] Show hand cursor if panning
-        elif shared_tool_context["is_panning"]:
-            # [TODO] Add custom hand cursor
-            pygame.mouse.set_visible(True) # For now, just show default arrow
-        
-        else:
-            pygame.mouse.set_visible(True)
+        # Default to system arrow
+        pygame.mouse.set_visible(True)
+        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
 
+        # Handle panning cursor override
+        if shared_tool_context["is_panning"] and hand_tool_instance:
+            pygame.mouse.set_visible(False) # Hide system cursor
+            if hand_tool_instance.custom_cursor_surf:
+                #  Get hotspot-adjusted position
+                hotspot_x = mouse_pos[0] - hand_tool_instance.custom_cursor_hotspot[0]
+                hotspot_y = mouse_pos[1] - hand_tool_instance.custom_cursor_hotspot[1]
+            
+                # Apply the config-driven offset
+                offset_x = hand_tool_instance.custom_cursor_offset[0]
+                offset_y = hand_tool_instance.custom_cursor_offset[1]
+            
+                #  Final draw position
+                draw_pos = (hotspot_x + offset_x, hotspot_y + offset_y)
+
+                screen.blit(hand_tool_instance.custom_cursor_surf, draw_pos)
+            else:
+                # Fallback panning cursor if image failed to load
+                pygame.mouse.set_visible(True) # Show system cursor as fallback
+                try:
+                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+                except: # Fails on some systems
+                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+
+        elif is_on_canvas and active_tool_instance:
+            # On canvas, with an active tool
+            
+            # 1. Draw Hover Tip (Circle) if it's a drawing tool
+            if active_tool_instance.is_drawing_tool:
+                pygame.mouse.set_visible(False) # Hide mouse if drawing tip
+                radius = 0
+                fill_color = (0,0,0)
+                
+                if active_name == "pen":
+                    radius = shared_tool_context["draw_size"] // 2
+                    fill_color = shared_tool_context["draw_color"]
+                elif active_name == "eraser":
+                    radius = shared_tool_context["eraser_size"] // 2
+                    fill_color = (255, 255, 255)
+                
+                screen_radius = max(1, int(radius * zoom))
+
+                pygame.draw.circle(screen, fill_color, mouse_pos, screen_radius)
+                pygame.draw.circle(screen, (0, 0, 0), mouse_pos, screen_radius, width=2)
+                if screen_radius > 3:
+                    pygame.draw.circle(screen, (255, 255, 255), mouse_pos, screen_radius - 2, width=1)
+            
+            # 2. Draw Custom Bitmap Cursor (if it exists)
+            if active_tool_instance.custom_cursor_surf:
+                pygame.mouse.set_visible(False) # Hide mouse if drawing bitmap
+                
+                #  Get hotspot-adjusted position
+                hotspot_x = mouse_pos[0] - active_tool_instance.custom_cursor_hotspot[0]
+                hotspot_y = mouse_pos[1] - active_tool_instance.custom_cursor_hotspot[1]
+
+                # Apply the config-driven offset
+                offset_x = active_tool_instance.custom_cursor_offset[0]
+                offset_y = active_tool_instance.custom_cursor_offset[1]
+            
+                #  Final draw position
+                draw_pos = (hotspot_x + offset_x, hotspot_y + offset_y)
+
+                screen.blit(active_tool_instance.custom_cursor_surf, draw_pos)
+            
+            # 3. If it's NOT a drawing tool AND has NO custom surface (e.g., Hand tool idle)
+            elif not active_tool_instance.is_drawing_tool:
+                pygame.mouse.set_visible(True)
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
         
         # --- Draw Top Menu Bar ---
         pygame.draw.rect(screen, (200, 200, 200), top_bar_rect)
@@ -892,15 +962,15 @@ def surface(screen, background, open_file_on_start=False):
         # --- Draw Toolbar ---
         pygame.draw.rect(screen, (80, 80, 80), toolbar_rect)
         
-        # --- [NEW] Draw Tools ---
-        for tool in loaded_tool_instances: # [FIX] This list no longer contains ZoomTool
+        # --- Draw Tools ---
+        for tool in loaded_tool_instances: #  This list no longer contains ZoomTool
             tool.draw(screen, shared_tool_context)
             
-        # [ADDED BACK] Draw Zoom UI on toolbar
-        if zoom_tool_instance: # [MODIFIED]
-            zoom_tool_instance.draw(screen, shared_tool_context) # [MODIFIED]
+        # Draw Zoom UI on toolbar
+        if zoom_tool_instance: # 
+            zoom_tool_instance.draw(screen, shared_tool_context) # 
             
-        # --- [NEW] Draw Dialog ---
+        # --- Draw Dialog ---
         if dialog_state is not None:
             # Draw semi-transparent overlay
             overlay = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
@@ -925,5 +995,7 @@ def surface(screen, background, open_file_on_start=False):
         pygame.display.flip()
         clock.tick(60)
 
+    # Reset to default cursor on exit
+    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
     pygame.mouse.set_visible(True)
 

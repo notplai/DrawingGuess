@@ -1,10 +1,13 @@
+import os
 import sys
 import pygame
 import random 
 from surfaces import SettingsSurface, CreditsSurface, SelSurface
 # Import our classes and functions
-from libs.common.components import Button
+from libs.common.components import ImageButton  #  Import ImageButton
 from libs.utils.configs import loadsConfig
+#  Import the background loader from its new location
+from libs.common.resources import getRes
 
 pygame.init()
 
@@ -12,122 +15,140 @@ pygame.init()
 SCREEN_WIDTH = 1668
 SCREEN_HIGH = 938
 
-# Button Dimensions
-SCREEN_BUTTON_WIDTH = 250
-SCREEN_BUTTON_HEIGHT = 80
+# Button Dimensions are now loaded from images
+# SCREEN_BUTTON_WIDTH = 250
+# SCREEN_BUTTON_HEIGHT = 80
 
-# Quit Dialog Dimensions
+# Quit Dialog Dimensions (Fallbacks for layout)
 DIALOG_WIDTH = 550
 DIALOG_HEIGHT = 200
-DIALOG_BTN_WIDTH = 100
-DIALOG_BTN_HEIGHT = 50
+DIALOG_BTN_WIDTH = 126  # Default width if image fails
+DIALOG_BTN_HEIGHT = 77 # Default height if image fails
 DIALOG_BTN_GAP = 20
 DIALOG_CENTER_X = SCREEN_WIDTH // 2
 DIALOG_CENTER_Y = SCREEN_HIGH // 2
 
 # --- Screen Setup ---
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HIGH))
-pygame.display.set_caption("My Game Menu")
+pygame.display.set_caption("DrawingGuess")
 
-# --- Settings and Background Loading ---
-def load_background_image(quality):
-    """Loads the correct background image based on quality setting."""
-    image_path = f'assets/menu/{quality}.jpg'
-    try:
-        print(f"Loading background: {image_path}")
-        # .convert() optimizes the image format for faster blitting
-        return pygame.image.load(image_path).convert()
-    except pygame.error as e:
-        print(f"Warning: Could not load {image_path}. Error: {e}")
-        print("Loading 'assets/menu/Default.jpg' as fallback.")
-        return pygame.image.load('assets/menu/Default.jpg').convert()
+# Settings and Background Loading ---
+# The getRes function has been moved to 
+# 'libs/components/environment/__init__.py'
 
 # --- Button Layout Function ---
 def update_button_layout(theme, play_btn, settings_btn, quit_btn):
     """
-    Moves the main menu buttons based on the selected theme.
+    Moves the main home buttons based on the selected theme.
+     Now uses button.rect.width/height for layout.
     """
-    width = SCREEN_BUTTON_WIDTH
-    height = SCREEN_BUTTON_HEIGHT
     
-    if theme == 'NightlyShift':
+    if theme == 'StarSketch':
         # "Play" and "Settings" in an inline row, "Quit" below
-        print("Applying 'NightlyShift' layout")
-        gap = 50 # Gap between play and settings
-        total_row_width = (width * 2) + gap
+        print("Applying 'StarSketch' layout")
+        
+        # Get dimensions from buttons
+        play_w, play_h = play_btn.rect.size
+        settings_w, settings_h = settings_btn.rect.size
+        quit_w, quit_h = quit_btn.rect.size
+        
+        gap = 25 # Gap between play and settings
+        total_row_width = play_w + gap + settings_w
         row_start_x = (SCREEN_WIDTH - total_row_width) // 2
         
         # Center Y for the row, slightly above middle
-        row_y = (SCREEN_HIGH - height) // 2 - 50 + 50
+        # Use play_h as the reference height for the row
+        row_y = (SCREEN_HIGH - play_h) // 2 - 50 + 100
         
-        play_btn.rect.topleft = (row_start_x, row_y)
-        settings_btn.rect.topleft = (row_start_x + width + gap, row_y)
+        play_btn.set_pos(row_start_x, row_y)
+        settings_btn.set_pos(row_start_x + play_w + gap, row_y)
         
         # "Quit" button down at the center
-        quit_x = (SCREEN_WIDTH - width) // 2
-        quit_y = row_y + height + 75 # Positioned below the row
-        quit_btn.rect.topleft = (quit_x, quit_y)
+        quit_x = (SCREEN_WIDTH - quit_w) // 2
+        quit_y = row_y + play_h + 35
+        quit_btn.set_pos(quit_x, quit_y)
 
-    elif theme == 'Legacy':
+    elif theme == 'BubblePencil':
         # All buttons on the right side, stacked from the BOTTOM
-        print("Applying 'Legacy' layout")
+        print("Applying 'BubblePencil' layout")
+        
+        # Get dimensions from buttons
+        play_w, play_h = play_btn.rect.size
+        settings_w, settings_h = settings_btn.rect.size
+        quit_w, quit_h = quit_btn.rect.size
+        
         padding_right = 50
         padding_bottom = 50
-        gap = 50 # Gap between buttons
+        gap = 25 # Gap between buttons
         
-        btn_x = SCREEN_WIDTH - width - padding_right
+        # Use quit_w as reference for X (assuming buttons are similar width)
+        btn_x = SCREEN_WIDTH - quit_w - padding_right
         
         # Stack from the bottom up
-        quit_btn_y = SCREEN_HIGH - height - padding_bottom
-        settings_btn_y = quit_btn_y - height - gap
-        play_btn_y = settings_btn_y - height - gap
+        quit_btn_y = SCREEN_HIGH - quit_h - padding_bottom
+        settings_btn_y = quit_btn_y - settings_h - gap
+        play_btn_y = settings_btn_y - play_h - gap
         
-        play_btn.rect.topleft = (btn_x, play_btn_y)
-        settings_btn.rect.topleft = (btn_x, settings_btn_y)
-        quit_btn.rect.topleft = (btn_x, quit_btn_y)
+        play_btn.set_pos(btn_x, play_btn_y)
+        settings_btn.set_pos(btn_x, settings_btn_y)
+        quit_btn.set_pos(btn_x, quit_btn_y)
 
     else:
-        # Default layout: stacked in the center
-        print("Applying 'Default' layout")
-        btn_x = (SCREEN_WIDTH - width) // 2
+        # CuteChaos layout: stacked in the center
+        print("Applying 'CuteChaos' layout")
         
-        play_btn.rect.topleft = (btn_x, (SCREEN_HIGH - height) // 2 - 50)
-        settings_btn.rect.topleft = (btn_x, (SCREEN_HIGH - height) // 2 + 75)
-        quit_btn.rect.topleft = (btn_x, (SCREEN_HIGH - height) // 2 + 200)
+        # Get dimensions from buttons
+        play_w, play_h = play_btn.rect.size
+        settings_w, settings_h = settings_btn.rect.size
+        quit_w, quit_h = quit_btn.rect.size
+        
+        # Use play_w as reference for X
+        btn_x = (SCREEN_WIDTH - play_w) // 2
+        
+        play_btn.set_pos(btn_x, (SCREEN_HIGH - play_h) // 2 - 30)
+        settings_btn.set_pos(btn_x, (SCREEN_HIGH - settings_h) // 2 + 75)
+        quit_btn.set_pos(btn_x, (SCREEN_HIGH - quit_h) // 2 + 200)
 
 
 # --- Load Initial Settings ---
 current_settings = loadsConfig()
-background = load_background_image(current_settings['themes'])
+background = getRes(current_settings['themes'])
 
 
-# --- Create Main Menu Buttons ---
+# --- Create Main home Buttons ---
 # We create them here, and the layout function will move them.
-btn_x = (SCREEN_WIDTH - SCREEN_BUTTON_WIDTH) // 2
+#  Use ImageButton
+btn_x = (SCREEN_WIDTH - 250) // 2 # Use default for initial placement
 
-play_btn = Button(
-    x=btn_x, y=(SCREEN_HIGH - SCREEN_BUTTON_HEIGHT) // 2 - 50,
-    width=SCREEN_BUTTON_WIDTH, height=SCREEN_BUTTON_HEIGHT, 
-    bg_color=(0, 200, 0), font_size=50,
+play_btn = ImageButton(
+    x=btn_x, y=(SCREEN_HIGH - 80) // 2 - 50,
+    image_name="play",
+    theme=current_settings['themes'],
+    default_width=396,
+    default_height=120
 )
 
-settings_btn = Button(
-    x=btn_x, y=(SCREEN_HIGH - SCREEN_BUTTON_HEIGHT) // 2 + 75,
-    width=SCREEN_BUTTON_WIDTH, height=SCREEN_BUTTON_HEIGHT, 
-    bg_color=(0, 0, 200), font_size=50,
+settings_btn = ImageButton(
+    x=btn_x, y=(SCREEN_HIGH - 80) // 2 + 75,
+    image_name="settings",
+    theme=current_settings['themes'],
+    default_width=396,
+    default_height=120
 )
 
-quit_btn = Button(
-    x=btn_x, y=(SCREEN_HIGH - SCREEN_BUTTON_HEIGHT) // 2 + 200,
-    width=SCREEN_BUTTON_WIDTH, height=SCREEN_BUTTON_HEIGHT,
-    bg_color=(200, 0, 0), font_size=50,
+quit_btn = ImageButton(
+    x=btn_x, y=(SCREEN_HIGH - 80) // 2 + 100,
+    image_name="exit",
+    theme=current_settings['themes'],
+    default_width=396,
+    default_height=120
 )
 
 # Call layout function on startup
 update_button_layout(current_settings['themes'], play_btn, settings_btn, quit_btn)
 
 
-# --- [PERFORMANCE REFACTOR] ---
+# ---
 # Create Quit Dialog assets ONCE, outside the loop
 # 1. Create the overlay surface
 dialog_overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HIGH), pygame.SRCALPHA)
@@ -147,27 +168,42 @@ dialog_text_surf = dialog_font.render("I'm felt sad, when see you leave... T^T",
 dialog_text_rect = dialog_text_surf.get_rect(center=(DIALOG_CENTER_X, DIALOG_CENTER_Y - 50))
 
 # 4. Create dialog buttons (using new constants for readability)
-yes_btn_x = DIALOG_CENTER_X - DIALOG_BTN_WIDTH - (DIALOG_BTN_GAP // 2)
-no_btn_x = DIALOG_CENTER_X + (DIALOG_BTN_GAP // 2)
+yes_btn = ImageButton(
+    x=0, y=0,
+    image_name="yes",
+    theme=current_settings['themes'],
+    default_width=DIALOG_BTN_WIDTH - 20,
+    default_height=DIALOG_BTN_HEIGHT - 20
+)
+
+no_btn = ImageButton(
+    x=0, y=0,
+    image_name="no",
+    theme=current_settings['themes'],
+    default_width=DIALOG_BTN_WIDTH - 20,
+    default_height=DIALOG_BTN_HEIGHT - 20
+)
+
+# Now calculate position based on loaded image sizes
+yes_btn_w = yes_btn.rect.width
+no_btn_w = no_btn.rect.width
+total_dialog_btn_width = yes_btn_w + DIALOG_BTN_GAP + no_btn_w
+
+yes_btn_x = DIALOG_CENTER_X - (total_dialog_btn_width / 2)
+no_btn_x = yes_btn_x + yes_btn_w + DIALOG_BTN_GAP
 btn_y = DIALOG_CENTER_Y + 25
 
-yes_btn = Button(
-    x=yes_btn_x, y=btn_y,
-    width=DIALOG_BTN_WIDTH, height=DIALOG_BTN_HEIGHT, 
-    bg_color=(0, 255, 0), font_size=40
-)
-yes_btn_original_center = yes_btn.rect.center
+#  Apply a small vertical offset to the 'yes' button to 
+# compensate for image padding and align it visually.
+yes_btn.set_pos(yes_btn_x, btn_y + 2)
+no_btn.set_pos(no_btn_x, btn_y)
 
-no_btn = Button(
-    x=no_btn_x, y=btn_y,
-    width=DIALOG_BTN_WIDTH, height=DIALOG_BTN_HEIGHT, 
-    bg_color=(255, 0, 0), font_size=40
-)
+yes_btn_original_center = yes_btn.rect.center
 no_btn_original_center = no_btn.rect.center
 # --- End of pre-created assets ---
 
 
-# --- [NEW] Create Credits Text Assets ---
+# ---  Create Credits Text Assets ---
 try:
     credits_font = pygame.font.Font("freesansbold.ttf", 30)
     credits_font_underlined = pygame.font.Font("freesansbold.ttf", 30)
@@ -194,6 +230,9 @@ running = True
 confirming_quit = False # State to show/hide the quit dialog
 clock = pygame.time.Clock() # Add a clock for FPS limiting (good practice)
 
+#  List of all buttons to update on theme change
+all_image_buttons = [play_btn, settings_btn, quit_btn, yes_btn, no_btn]
+
 while running:
     
     # Get mouse position once per frame
@@ -211,7 +250,7 @@ while running:
             if no_btn.is_clicked(event):
                 confirming_quit = False # Close dialog
         else:
-            # If dialog is closed, check main menu buttons
+            # If dialog is closed, check main home buttons
             if play_btn.is_clicked(event):
                 SelSurface(screen, background.copy())
                 
@@ -220,23 +259,45 @@ while running:
                 
             if settings_btn.is_clicked(event):
                 # Pass the screen, a copy of the background, and the loading function
-                updated_settings = SettingsSurface(screen, background.copy(), load_background_image)
+                updated_settings = SettingsSurface(screen, background.copy(), getRes)
                 
                 # Check if theme setting changed
                 theme_changed = updated_settings['themes'] != current_settings['themes']
                 
                 if theme_changed:
                     print(f"Theme setting changed to: {updated_settings['themes']}")
+                    new_theme = updated_settings['themes']
+                    
                     # Reload the background
-                    background = load_background_image(updated_settings['themes'])
-                    # Call layout function to move buttons
-                    update_button_layout(updated_settings['themes'], play_btn, settings_btn, quit_btn)
+                    background = getRes(new_theme)
+                    
+                    #  Reload all button images
+                    print("Reloading button images...")
+                    for btn in all_image_buttons:
+                        btn.reload_image(new_theme)
+                        
+                    #  Recalculate dialog button positions
+                    yes_btn_w = yes_btn.rect.width
+                    no_btn_w = no_btn.rect.width
+                    total_dialog_btn_width = yes_btn_w + DIALOG_BTN_GAP + no_btn_w
+                    yes_btn_x = DIALOG_CENTER_X - (total_dialog_btn_width / 2)
+                    no_btn_x = yes_btn_x + yes_btn_w + DIALOG_BTN_GAP
+                    
+                    #  Apply the correct Y position AND the visual offset
+                    btn_y = DIALOG_CENTER_Y + 25
+                    yes_btn.set_pos(yes_btn_x, btn_y - 5) # Move up 5 pixels
+                    no_btn.set_pos(no_btn_x, btn_y)
+
+                    yes_btn_original_center = yes_btn.rect.center
+                    no_btn_original_center = no_btn.rect.center
+                    
+                    # Call layout function to move main buttons
+                    update_button_layout(new_theme, play_btn, settings_btn, quit_btn)
                 
                 # Store the latest settings
                 current_settings = updated_settings
             
-            # --- [NEW] Handle Credits Click ---
-            # [FIXED] First check event type, THEN check collision
+            # ---  Handle Credits Click ---
             if event.type == pygame.MOUSEBUTTONDOWN and credits_rect.collidepoint(event.pos):
                 CreditsSurface(screen, background.copy())
                 # Note: This will pause main.py until the credits are done
@@ -246,14 +307,14 @@ while running:
     # 1. Draw the background
     screen.blit(background, (0, 0))
     
-    # 2. Draw main menu buttons
+    # 2. Draw main home buttons
     play_btn.draw(screen)
     settings_btn.draw(screen)
     quit_btn.draw(screen)
 
     # 3. Draw the quit dialog (if active)
     if confirming_quit:
-        # [PERFORMANCE REFACTOR]
+        #
         # Draw the pre-created assets instead of creating new ones every frame
         
         # Draw overlay
@@ -280,7 +341,7 @@ while running:
         yes_btn.draw(screen)
         no_btn.draw(screen)
 
-    # 4. --- [NEW] Draw Credits Text ---
+    # 4. ---  Draw Credits Text ---
     if not confirming_quit: # Only draw if dialog is not open
         if credits_rect.collidepoint(mouse_pos):
             screen.blit(credits_surf_underlined, credits_rect)
@@ -295,3 +356,4 @@ while running:
 
 pygame.quit()
 sys.exit()
+

@@ -1,7 +1,7 @@
 import sys
 import pygame
 
-# --- [NEW] Credits Data Structure ---
+# ---  Credits Data Structure ---
 # We now use tuples with a "type" at the end to define the layout.
 # (text, size, 'center') - For centered titles
 # (text_left, text_right, size, 'columns') - For two-column rows
@@ -19,21 +19,21 @@ CREDITS_DATA = [
     ("", 30, "spacer"),
 
     ("Artists", 40, "center"),
-    ("Sorwit", "@sorwit_ball", 30, "columns"),
+    ("Sorawit Nuamwat", "@sorwit_ball", 30, "columns"),
     ("", 30, "spacer"),
 
     ("Designer", 40, "center"),
-    ("Suphakorn Khamwongsa", "Sorwit", 30, "columns"),
+    ("Suphakorn Khamwongsa", "Sorawit Nuamwat", 30, "columns"),
     ("Test1", "Test2", 30, "columns"),
     ("", 30, "spacer"),
 
     ("Tester", 40, "center"),
-    ("Sorwit", "Test1", 30, "columns"),
+    ("Sorawit Nuamwat", "Test1", 30, "columns"),
     ("Test2", "Test3", 30, "columns"),
     ("", 30, "spacer"),
 
     ("Special Thanks", 40, "center"),
-    ("Coffee", "Latte", 30, "columns"), # make artists have superpowers to did project happend!!
+    ("Coffee", "Iced Green Tea", 30, "columns"), # make artists have superpowers to did project happend!!
     ("Taiwan Milk Tea", "Iced Matcha Latte", 30, "columns"), # after I droke, I've superpowers to did project!
     ("Google Vertex", "Google Gemini", 30, "columns"), # For optimization and sorting the files
     ("", 60, "spacer"),
@@ -50,7 +50,7 @@ CREDITS_DATA = [
     ("", 60, "spacer"),
     ("", 60, "spacer"),
     
-    # --- [NEW] Thanks For Playing section ---
+    # ---  Thanks For Playing section ---
     ("Thanks for playing!", 80, "center"),
     ("", 60, "spacer"), # Add some padding at the end
 ]
@@ -66,12 +66,12 @@ def surface(screen, background):
     screen_width = screen.get_width()
     screen_height = screen.get_height()
 
-    # --- [PERFORMANCE] ---
+    # ---
     # Create a semi-transparent overlay
     overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 180)) # Darker overlay for credits
     
-    # --- [NEW] Layout Positions ---
+    # ---  Layout Positions ---
     center_x = screen_width / 2
     # Right-hand edge of the left column (roles)
     column_1_x = center_x - 50 
@@ -135,7 +135,7 @@ def surface(screen, background):
     scroll_y = 0
     scroll_speed = 1.5 # Pixels per frame
     
-    # --- [NEW] Stop scrolling logic ---
+    # ---  Stop scrolling logic ---
     scrolling_stopped = False
     
     while running:

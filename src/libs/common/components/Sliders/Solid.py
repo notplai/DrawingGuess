@@ -4,6 +4,7 @@ class Slider:
     """
     A simple horizontal slider component.
     """
+    
     def __init__(self, x, y, width, height, min_val, max_val, initial_val, 
                  track_color=(150, 150, 150), knob_color=(240, 240, 240)):
         
@@ -35,7 +36,10 @@ class Slider:
 
     def _update_value_from_pos(self, mouse_x):
         """Internal: Set self.value based on mouse_x."""
-        percent = (mouse_x - self.track_rect.x) / self.track_rect.width
+        # [FIX] Clamp mouse_x to the track's limits
+        clamped_x = max(self.track_rect.x, min(mouse_x, self.track_rect.right))
+        
+        percent = (clamped_x - self.track_rect.x) / self.track_rect.width
         percent = max(0.0, min(1.0, percent)) # Clamp
         self.value = self.min_val + percent * (self.max_val - self.min_val)
         
@@ -65,10 +69,15 @@ class Slider:
                 return True
         
         elif event.type == pygame.MOUSEBUTTONUP:
-            self.is_dragging = False
+            # [FIX] Consume mouseup event if we were dragging
+            if self.is_dragging:
+                self.is_dragging = False
+                return True
             
         elif event.type == pygame.MOUSEMOTION:
             if self.is_dragging:
+                # [MODIFIED] Reverted behavior.
+                # Dragging now continues even if the mouse leaves the rect.
                 self._update_value_from_pos(event.pos[0])
                 self._update_knob_pos_from_value()
                 return True
@@ -82,3 +91,4 @@ class Slider:
         # 2. Draw knob
         pygame.draw.circle(screen, self.knob_color, (self.knob_x, self.rect.centery), self.knob_radius)
         pygame.draw.circle(screen, (50, 50, 50), (self.knob_x, self.rect.centery), self.knob_radius, 2)
+

@@ -8,7 +8,7 @@ class Button:
     
     def __init__(self, x, y, width, height, text='', text_color='Black', 
                  bg_color=(200, 200, 200), border_color=(0, 0, 0), border_width=2, 
-                 font_size=30, text_align='center', icon_path=None): # [NEW] Added icon_path
+                 font_size=30, text_align='center', icon_path=None): #  Added icon_path
         
         # The button's position and size
         self.rect = pygame.Rect(x, y, width, height)
@@ -24,9 +24,9 @@ class Button:
         try:
             self.font = pygame.font.Font("freesansbold.ttf", font_size)
         except FileNotFoundError:
-            self.font = pygame.font.Font(None, font_size) # Fallback to default
+            self.font = pygame.font.Font(None, font_size) # Fallback to CuteChaos
 
-        # --- [NEW] Icon Loading ---
+        # ---  Icon Loading ---
         self.icon_surf = None
         if icon_path:
             try:
@@ -61,7 +61,7 @@ class Button:
         if self.border_color:
             pygame.draw.rect(screen, self.border_color, self.rect, self.border_width)
             
-        # 3. [NEW] Draw icon or text
+        # 3.  Draw icon or text
         if self.icon_surf:
             icon_rect = self.icon_surf.get_rect(center=self.rect.center)
             screen.blit(self.icon_surf, icon_rect)

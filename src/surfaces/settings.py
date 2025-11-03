@@ -2,7 +2,8 @@ import sys
 import pygame
 # Import our functions and classes
 from libs.utils.configs import loadsConfig, savesConfig
-from libs.common.components import Button, Checkbox, Dropdown
+#  Import ImageButton as well as new component names
+from libs.common.components import SolidButton, SolidBox, SolidDropDown, ImageButton
 
 def surface(screen, background, load_background_image_func):
     """
@@ -14,32 +15,41 @@ def surface(screen, background, load_background_image_func):
     clock = pygame.time.Clock() # Add clock for FPS limiting
 
     # --- Create UI Objects ---
-    back_btn = Button(50, 50, 150, 80, text="Back", text_color='White', 
-                      bg_color=(50, 50, 50), border_color='White', font_size=50)
+    #  Changed SolidButton to ImageButton
+    back_btn = ImageButton(
+        x=50, y=50,
+        image_name="back",
+        theme=settings['themes'],
+        default_width=150, # Set to the old button's size
+        default_height=80
+    )
     
-    themes_dropdown = Dropdown(
+    #  Using new SolidDropDown component
+    themes_dropdown = SolidDropDown(
         x=screen.get_width() / 2 - 150, y=300, 
         width=335, height=50,
         main_text="Theme", # Set main_text properly
-        options=["Default", "NightlyShift", "Legacy"]
+        options=["CuteChaos", "StarSketch", "BubblePencil"]
     )
     themes_dropdown.set_selected(settings['themes']) # Set its current value
     
-    music_checkbox = Checkbox(
+    #  Using new SolidBox component
+    music_checkbox = SolidBox(
         x=screen.get_width() / 2 - 150, y=400,
         width=50, height=50,
         label="Music",
         initial_checked=settings['music']
     )
     
-    default_btn = Button(
+    #  Using new SolidButton component
+    default_btn = SolidButton(
         x=screen.get_width() / 2 - 150, y=500,
         width=300, height=50,
-        text="Default Settings",
+        text="Reset Default",
         font_size=30
     )
 
-    # --- [PERFORMANCE REFACTOR] ---
+    # ---
     # Create static assets ONCE, outside the loop
     
     # 1. Create a semi-transparent overlay
@@ -53,15 +63,6 @@ def surface(screen, background, load_background_image_func):
         font_title = pygame.font.Font(None, 80)
     title_surf = font_title.render("Settings", True, "White")
     title_rect = title_surf.get_rect(center=(screen.get_width()/2, 100))
-    
-    # 3. Render the static label for the dropdown
-    # (Note: This is now handled by the Dropdown class itself,
-    # but we'll leave this here in case you want to revert.
-    # The refactored Dropdown now handles "Theme: Default")
-    
-    # We will adjust the Dropdown position slightly to accommodate the label
-    # in the refactored Dropdown class.
-    # No, the new Dropdown class handles it all. We can remove the label.
     
     # --- Settings Loop ---
     while running:
@@ -84,12 +85,13 @@ def surface(screen, background, load_background_image_func):
             if new_theme:
                 # A new theme was selected.
                 settings['themes'] = new_theme
-                # [PERFORMANCE REFACTOR]
-                # Remove redundant save. Config will be saved on "Back" or "Quit".
-                # savesConfig(settings) 
                 
                 # Reload the background *immediately*
                 background = load_background_image_func(new_theme)
+                
+                #  Reload the back button's image to match
+                back_btn.reload_image(new_theme)
+                
                 continue # Event handled
 
             # If dropdown was open, consume the click to prevent click-through
@@ -98,26 +100,22 @@ def surface(screen, background, load_background_image_func):
 
             # Check other buttons
             if default_btn.is_clicked(event):
-                settings = {"themes": "Default", "music": True}
-                
-                # [PERFORMANCE REFACTOR]
-                # Remove redundant save.
-                # savesConfig(settings) 
+                settings = {"themes": "BubblePencil", "music": True}
                 
                 # Update UI elements to reflect the change
                 themes_dropdown.set_selected(settings['themes'])
                 music_checkbox.checked = settings['music']
-                # Reload background on default reset
+                # Reload background on CuteChaos reset
                 background = load_background_image_func(settings['themes'])
+                
+                #  Also update the back button on reset
+                back_btn.reload_image(settings['themes'])
+                
                 continue # Event handled
 
             if music_checkbox.handle_event(event):
                 # State changed, update settings
                 settings['music'] = music_checkbox.checked
-                
-                # [PERFORMANCE REFACTOR]
-                # Remove redundant save.
-                # savesConfig(settings)
                 continue # Event handled
 
 

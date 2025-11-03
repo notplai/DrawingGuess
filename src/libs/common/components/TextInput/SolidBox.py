@@ -1,6 +1,6 @@
 import pygame
 
-class InputBox:
+class Input:
     """
     A simple text input box component.
     """
@@ -86,7 +86,7 @@ class InputBox:
         # Ensure text doesn't go outside the box
         # text_rect.clamp_ip(self.rect.inflate(-10, -10)) # Not needed
         
-        # [FIX] Use set_clip for clipping, not screen.clipper
+        #  Use set_clip for clipping, not screen.clipper
         clipping_rect = self.rect.inflate(-10, -10)
         old_clip = screen.get_clip() # Store old clip region
         screen.set_clip(clipping_rect) # Set new clip region
@@ -108,7 +108,7 @@ class InputBox:
                 if cursor_x > self.rect.right - 5:
                     cursor_x = self.rect.right - 5
                 
-                # [FIX] Make sure cursor is also within the clip rect
+                #  Make sure cursor is also within the clip rect
                 if cursor_x > clipping_rect.right:
                     cursor_x = clipping_rect.right
 

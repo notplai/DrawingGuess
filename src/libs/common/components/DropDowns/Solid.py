@@ -35,7 +35,7 @@ class Dropdown:
             rect = pygame.Rect(x, y + (i + 1) * height, width, height)
             self.option_rects.append(rect)
 
-        # --- [PERFORMANCE REFACTOR] ---
+        # ---
         # Pre-render all possible option text surfaces
         self.option_surfs = [
             self.font.render(option, True, self.option_text_color) 
@@ -57,10 +57,10 @@ class Dropdown:
         This is called only when the selection changes, not every frame.
         """
         self.selected_option = option
-        # Create the full text, e.g., "Theme: Default"
+        # Create the full text, e.g., "Theme: CuteChaos"
         full_text = f"{self.main_text}: {self.selected_option}"
         
-        # [PERFORMANCE REFACTOR]
+        #
         # Render the text surface *once* here
         self.current_display_surf = self.font.render(full_text, True, self.text_color)
         self.current_display_rect = self.current_display_surf.get_rect(
@@ -96,7 +96,7 @@ class Dropdown:
         pygame.draw.rect(screen, self.bg_color, self.rect)
         pygame.draw.rect(screen, self.text_color, self.rect, 2)
         
-        # [PERFORMANCE REFACTOR]
+        #
         # Blit the pre-rendered main text surface
         if self.current_display_surf:
             screen.blit(self.current_display_surf, self.current_display_rect)
@@ -108,6 +108,6 @@ class Dropdown:
                 pygame.draw.rect(screen, self.option_bg_color, option_rect)
                 pygame.draw.rect(screen, 'Black', option_rect, 2)
                 
-                # [PERFORMANCE REFACTOR]
+                #
                 # Blit the pre-rendered option surface
                 screen.blit(self.option_surfs[i], self.option_surfs_rects[i])

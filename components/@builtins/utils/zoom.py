@@ -1,5 +1,5 @@
 import pygame
-from libs.common.components import Slider
+from libs.common.components import SolidSlider
 
 # --- Coordinate Helper Functions ---
 # (These are needed for the tool's internal logic)
@@ -24,10 +24,10 @@ class ZoomTool:
         self.rect = pygame.Rect(rect.x, rect.y, 260, 30) # 200 slider + 60 text
         
         # Create the slider
-        self.slider = Slider(
+        self.slider = SolidSlider(
             x=self.rect.x, y=self.rect.y, 
-            width=200, height=30, 
-            min_val=0.01, max_val=2.0, initial_val=1.0
+            width=100, height=25, 
+            min_val=1.0, max_val=2.0, initial_val=1.0
         )
         
         self.is_panning = False
@@ -41,7 +41,7 @@ class ZoomTool:
 
     def _set_zoom(self, context, new_zoom, pivot_pos):
         """Internal helper to set zoom and recalculate pan."""
-        new_zoom = max(0.01, min(2.0, new_zoom)) # Clamp
+        new_zoom = max(1.0, min(2.0, new_zoom)) # Clamp
         
         current_zoom = context["zoom_level"]
         current_offset = context["pan_offset"]
@@ -103,7 +103,7 @@ class ZoomTool:
                 if event.y > 0: # Scroll Up
                     self._set_zoom(context, min(2.0, current_zoom + 0.1), mouse_pos)
                 elif event.y < 0: # Scroll Down
-                    self._set_zoom(context, max(0.01, current_zoom - 0.1), mouse_pos)
+                    self._set_zoom(context, max(1.0, current_zoom - 0.1), mouse_pos)
                 return True # Consumed
 
         # 4. Handle Keyboard Zoom
