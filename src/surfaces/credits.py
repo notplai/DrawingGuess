@@ -146,7 +146,7 @@ def surface(screen, background):
                 sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    running = False # Go back on ESC
+                    running = False
         
         # --- Logic ---
         if not scrolling_stopped:

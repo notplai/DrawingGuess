@@ -75,8 +75,8 @@ def surface(screen, background, load_background_image_func):
                 pygame.quit()
                 sys.exit()
             
-            if back_btn.is_clicked(event):
-                savesConfig(settings) # Save on back
+            if back_btn.is_clicked(event) or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                savesConfig(settings)
                 running = False
                 continue 
 

@@ -205,4 +205,3 @@ class PenTool:
             self.slider.draw(screen)
             self.input_box.draw(screen)
             screen.blit(self.px_label_surf, self.px_label_rect)
-

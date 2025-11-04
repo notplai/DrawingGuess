@@ -20,8 +20,8 @@ class Slider:
         self.track_rect = pygame.Rect(x, y + height // 4, width, height // 2)
         
         self.knob_radius = height // 2
-        self.knob_x = 0 # Will be set by _update_knob_pos_from_value
-        self._update_knob_pos_from_value() # Set initial knob position
+        self.knob_x = 0
+        self._update_knob_pos_from_value()
         
         self.is_dragging = False
 

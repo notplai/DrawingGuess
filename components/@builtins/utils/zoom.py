@@ -9,6 +9,12 @@ def screen_to_canvas(screen_pos, zoom, offset):
         (screen_pos[1] - offset[1]) / zoom
     )
 
+# --- MODIFIED: World and Camera Constants ---
+# This is now the SINGLE SOURCE OF TRUTH.
+# Change these values, and canvas.py will adapt.
+MIN_ZOOM = 0.5
+MAX_ZOOM = 2.0
+
 class ZoomTool:
     """
     A UI component that manages all zoom and pan logic for the whiteboard.
@@ -19,15 +25,20 @@ class ZoomTool:
         self.config_type = config["type"] # "ui_component"
         self.is_drawing_tool = False # This is not a drawing tool
 
+        # --- MODIFIED: Store limits on the instance ---
+        # This allows canvas.py to read them.
+        self.min_zoom = MIN_ZOOM
+        self.max_zoom = MAX_ZOOM
+
         # The 'rect' passed in is a placeholder, we will define our own
         # The rect attribute will be for the slider
-        self.rect = pygame.Rect(rect.x, rect.y, 260, 30) # 200 slider + 60 text
+        self.rect = pygame.Rect(rect.x, rect.y, 340, 30) # 260 slider + 80 text
         
-        # Create the slider
+        # --- MODIFIED: Create the slider with new bounds ---
         self.slider = SolidSlider(
             x=self.rect.x, y=self.rect.y, 
-            width=100, height=25, 
-            min_val=1.0, max_val=2.0, initial_val=1.0
+            width=260, height=25,
+            min_val=self.min_zoom, max_val=self.max_zoom, initial_val=1.0,
         )
         
         self.is_panning = False
@@ -41,7 +52,8 @@ class ZoomTool:
 
     def _set_zoom(self, context, new_zoom, pivot_pos):
         """Internal helper to set zoom and recalculate pan."""
-        new_zoom = max(1.0, min(2.0, new_zoom)) # Clamp
+        # --- MODIFIED: Use new clamps ---
+        new_zoom = max(MIN_ZOOM, min(MAX_ZOOM, new_zoom)) # Clamp
         
         current_zoom = context["zoom_level"]
         current_offset = context["pan_offset"]
@@ -56,6 +68,7 @@ class ZoomTool:
         context["zoom_level"] = new_zoom
         context["pan_offset"] = new_offset
         self.slider.set_value(new_zoom)
+        # Pan constraints are handled in canvas.py main loop
 
     def handle_event(self, event, context):
         """Handles all zoom/pan related events."""
@@ -91,19 +104,22 @@ class ZoomTool:
 
         # 3. Handle Mouse Wheel Zoom
         if event.type == pygame.MOUSEWHEEL:
-            # Check if mouse is over any UI (top bar or toolbar)
             is_over_ui = False
-            for rect in context.get("ui_hotspots", []):
-                if rect.collidepoint(mouse_pos):
-                    is_over_ui = True
-                    break
+            # Check for top bar
+            if pygame.Rect(0, 0, context["screen"].get_width(), 40).collidepoint(mouse_pos):
+                is_over_ui = True
+            # Check for toolbar
+            elif pygame.Rect(0, context["toolbar_current_y"], context["screen"].get_width(), 80).collidepoint(mouse_pos):
+                is_over_ui = True
             
             if not is_over_ui:
                 current_zoom = context["zoom_level"]
+                # --- MODIFIED: Use new zoom logic ---
                 if event.y > 0: # Scroll Up
-                    self._set_zoom(context, min(2.0, current_zoom + 0.1), mouse_pos)
+                    self._set_zoom(context, min(MAX_ZOOM, current_zoom + 0.1), mouse_pos)
                 elif event.y < 0: # Scroll Down
-                    self._set_zoom(context, max(1.0, current_zoom - 0.1), mouse_pos)
+                    self._set_zoom(context, max(MIN_ZOOM, current_zoom - 0.1), mouse_pos)
+                # --- END MODIFIED ---
                 return True # Consumed
 
         # 4. Handle Keyboard Zoom
@@ -113,23 +129,23 @@ class ZoomTool:
             
             if is_ctrl_or_cmd:
                 if event.key == pygame.K_0:
-                    context["zoom_level"] = 1.0
-                    context["pan_offset"] = (0, 0)
-                    self.slider.set_value(1.0)
+                    # --- MODIFIED: Reset zoom to 1.0, pivoting on mouse pos ---
+                    self._set_zoom(context, 1.0, mouse_pos)
                     return True # Consumed
                 elif event.key == pygame.K_EQUALS:
-                    self._set_zoom(context, context["zoom_level"] + 0.25, mouse_pos)
+                    # --- MODIFIED: Use new clamps ---
+                    self._set_zoom(context, min(MAX_ZOOM, context["zoom_level"] + 0.05), mouse_pos)
                     return True # Consumed
                 elif event.key == pygame.K_MINUS:
-                    self._set_zoom(context, context["zoom_level"] - 0.25, mouse_pos)
+                    # --- MODIFIED: Use new clamps ---
+                    self._set_zoom(context, max(MIN_ZOOM, context["zoom_level"] - 0.05), mouse_pos)
                     return True # Consumed
+                # --- END MODIFIED ---
 
         return False # Did not consume event
 
     def update_button_pos(self, x, y):
         """Called by the host to update the component's position."""
-        # This is for the *button* tools, but we are a UI component.
-        # We'll update our slider's position.
         self.rect.topleft = (x, y)
         self.slider.update_pos(x, y) # Slider is main element
 

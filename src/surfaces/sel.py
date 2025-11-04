@@ -2,7 +2,7 @@ import sys
 import pygame
 #  Import SolidButton as Button (for existing buttons)
 from libs.common.components import SolidButton, ImageButton
-from .boards.whiteboard import surface as whiteboardSurface 
+from .boards.canvas import surface as whiteboardSurface, 
 #  Import config loader to get the theme
 from libs.utils.configs import loadsConfig
 
@@ -48,7 +48,7 @@ def surface(screen, background):
         text="FreeInk", font_size=50
     )
     
-    guessing_btn = SolidButton(
+    quick_btn = SolidButton(
         x=btn_x, y=350, width=btn_width, height=btn_height,
         text="Guessing", font_size=50
     )
@@ -95,14 +95,14 @@ def surface(screen, background):
 
             if current_view == "mode":
                 # back_btn is now an ImageButton, but .is_clicked() works the same
-                if back_btn.is_clicked(event):
-                    running = False # Exit this surface
+                if back_btn.is_clicked(event) or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                    running = False
                 
                 if freeink_btn.is_clicked(event):
-                    current_view = "file" # Go to file selection
+                    current_view = "file"
                 
-                if guessing_btn.is_clicked(event):
-                    current_view = "file" # Go to file selection
+                if quick_btn.is_clicked(event):
+                    current_view = "file"
                 
                 # AI button is disabled, so we don't check its click
             
@@ -130,7 +130,7 @@ def surface(screen, background):
             screen.blit(title_surf, title_rect)
             back_btn.draw(screen)
             freeink_btn.draw(screen)
-            guessing_btn.draw(screen)
+            quick_btn.draw(screen)
             ai_btn.draw(screen)
             
         elif current_view == "file":

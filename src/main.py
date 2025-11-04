@@ -15,15 +15,11 @@ pygame.init()
 SCREEN_WIDTH = 1668
 SCREEN_HIGH = 938
 
-# Button Dimensions are now loaded from images
-# SCREEN_BUTTON_WIDTH = 250
-# SCREEN_BUTTON_HEIGHT = 80
-
 # Quit Dialog Dimensions (Fallbacks for layout)
 DIALOG_WIDTH = 550
 DIALOG_HEIGHT = 200
-DIALOG_BTN_WIDTH = 126  # Default width if image fails
-DIALOG_BTN_HEIGHT = 77 # Default height if image fails
+DIALOG_BTN_WIDTH = 126  # Default width
+DIALOG_BTN_HEIGHT = 77 # Default height
 DIALOG_BTN_GAP = 20
 DIALOG_CENTER_X = SCREEN_WIDTH // 2
 DIALOG_CENTER_Y = SCREEN_HIGH // 2
