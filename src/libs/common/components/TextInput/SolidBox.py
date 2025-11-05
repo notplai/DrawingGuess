@@ -1,114 +1,168 @@
 import pygame
+from typing import Optional, Tuple, Any
 
+# Defines an Input UI component (text box).
 class Input:
     """
-    A simple text input box component.
+    A simple text input box UI component.
+    Handles text entry, backspace, and cursor blinking.
+    Currently configured to only accept digits.
     """
-    def __init__(self, x, y, width, height, text='', font=None, 
-                 bg_color=(255, 255, 255), text_color=(0, 0, 0), 
-                 active_color=(200, 200, 255), border_color=(100, 100, 100)):
-        
-        self.rect = pygame.Rect(x, y, width, height)
-        self.text = text
-        self.font = font if font else pygame.font.Font(None, 28)
-        
-        self.bg_color = bg_color
-        self.text_color = text_color
-        self.active_color = active_color
-        self.border_color = border_color
-        
-        self.active = False
-        self.text_surface = self.font.render(text, True, self.text_color)
-        
-        # Cursor blink logic
-        self.cursor_visible = True
-        self.cursor_timer = 0
-        self.CURSOR_BLINK_RATE = 500 # milliseconds
+    
+    def __init__(self, x: int, y: int, width: int, height: int, text: str = '', font: Optional[pygame.font.Font] = None, 
+                 bg_color: Any = (255, 255, 255), text_color: Any = (0, 0, 0), 
+                 active_color: Any = (200, 200, 255), border_color: Any = (100, 100, 100)):
+        """
+        Initializes the Input box.
 
-    def set_text(self, text):
-        """Public method to set the text from outside."""
+        Args:
+            x: The x-coordinate of the top-left corner.
+            y: The y-coordinate of the top-left corner.
+            width: The width of the input box.
+            height: The height of the input box.
+            text: The initial text in the box.
+            font: The pygame.font.Font to use. Defaults to None (size 28).
+            bg_color: The background color when inactive.
+            text_color: The color of the text and cursor.
+            active_color: The background color when active (clicked on).
+            border_color: The color of the box's border.
+        """
+        
+        self.rect: pygame.Rect = pygame.Rect(x, y, width, height)
+        self.text: str = text
+        self.font: pygame.font.Font = font if font else pygame.font.Font(None, 28)
+        
+        self.bg_color: Any = bg_color
+        self.text_color: Any = text_color
+        self.active_color: Any = active_color
+        self.border_color: Any = border_color
+        
+        self.active: bool = False # True if the user clicked on the box
+        self.text_surface: pygame.Surface = self.font.render(text, True, self.text_color)
+        
+        # --- Cursor Blink Logic ---
+        self.cursor_visible: bool = True
+        self.cursor_timer: int = 0
+        self.CURSOR_BLINK_RATE: int = 500 # milliseconds
+
+    # Sets the text programmatically.
+    def set_text(self, text: Any) -> None:
+        """
+        Updates the text in the input box and re-renders the text surface.
+
+        Args:
+            text: The new text to set (will be converted to a string).
+        """
         self.text = str(text)
         self.text_surface = self.font.render(self.text, True, self.text_color)
 
-    def get_text(self):
-        """Public method to get the current text."""
+    # Gets the current text.
+    def get_text(self) -> str:
+        """
+        Returns the current text string in the input box.
+
+        Returns:
+            The text string.
+        """
         return self.text
 
-    def handle_event(self, event):
+    # Handles user input events for the text box.
+    def handle_event(self, event: pygame.event.Event) -> Tuple[bool, str]:
         """
-        Handles mouse and keyboard events.
-        Returns (bool: value_changed_on_enter, str: current_text)
+        Processes pygame events for clicking, typing, and pressing Enter.
+
+        Args:
+            event: The pygame.event.Event to process.
+
+        Returns:
+            A tuple (value_changed, current_text):
+            - value_changed (bool): True if Enter was pressed.
+            - current_text (str): The current text in the box.
         """
-        value_changed = False
+        value_changed: bool = False
         
         if event.type == pygame.MOUSEBUTTONDOWN:
+            # Toggle active state based on click position
             if self.rect.collidepoint(event.pos):
                 self.active = not self.active
             else:
                 self.active = False
-            # Reset cursor timer on click
+            # Reset cursor blink on click
             self.cursor_timer = pygame.time.get_ticks()
             self.cursor_visible = True
                 
         if event.type == pygame.KEYDOWN and self.active:
             if event.key == pygame.K_RETURN:
                 self.active = False
-                value_changed = True # Signal that Enter was pressed
+                value_changed = True # Signal that user confirmed input
             elif event.key == pygame.K_BACKSPACE:
                 self.text = self.text[:-1]
-            # Check if the key is a digit
-            elif event.unicode.isdigit():
+            elif event.unicode.isdigit(): # --- NOTE: Only accepts digits ---
                 self.text += event.unicode
             
+            # Re-render text surface and reset cursor
             self.text_surface = self.font.render(self.text, True, self.text_color)
-            # Reset cursor timer on key press
             self.cursor_timer = pygame.time.get_ticks()
             self.cursor_visible = True
 
         return value_changed, self.text
 
-    def update_pos(self, x, y):
-        """Update the input box's position."""
+    # Updates the input box's position.
+    def update_pos(self, x: int, y: int) -> None:
+        """
+        Updates the top-left position of the input box.
+
+        Args:
+            x: The new x-coordinate.
+            y: The new y-coordinate.
+        """
         self.rect.topleft = (x, y)
 
-    def draw(self, screen):
-        """Draws the input box."""
-        
-        # 1. Draw background
-        current_bg = self.active_color if self.active else self.bg_color
+    # Draws the input box on the screen.
+    def draw(self, screen: pygame.Surface) -> None:
+        """
+        Draws the input box, text, and cursor (if active)
+        on the provided surface.
+
+        Args:
+            screen: The pygame.Surface to draw on.
+        """
+        # Set background color based on active state
+        current_bg: Any = self.active_color if self.active else self.bg_color
         pygame.draw.rect(screen, current_bg, self.rect)
         
-        # 2. Draw border
+        # Draw border
         pygame.draw.rect(screen, self.border_color, self.rect, 2)
         
-        # 3. Draw text (clipped to box)
-        text_rect = self.text_surface.get_rect(midleft=(self.rect.x + 5, self.rect.centery))
-        # Ensure text doesn't go outside the box
-        # text_rect.clamp_ip(self.rect.inflate(-10, -10)) # Not needed
+        # Center text vertically, add left padding
+        text_rect: pygame.Rect = self.text_surface.get_rect(midleft=(self.rect.x + 5, self.rect.centery))
         
-        #  Use set_clip for clipping, not screen.clipper
-        clipping_rect = self.rect.inflate(-10, -10)
-        old_clip = screen.get_clip() # Store old clip region
-        screen.set_clip(clipping_rect) # Set new clip region
+        # --- Clipping to keep text inside the box ---
+        clipping_rect: pygame.Rect = self.rect.inflate(-10, -10) # 5px padding
+        old_clip: Optional[pygame.Rect] = screen.get_clip()
+        screen.set_clip(clipping_rect)
         
         screen.blit(self.text_surface, text_rect)
         
-        screen.set_clip(old_clip) # Restore old clip region
+        screen.set_clip(old_clip) # Restore original clipping
+        # --- End Clipping ---
         
-        # 4. Draw cursor
+        # --- Draw Cursor ---
         if self.active:
-            now = pygame.time.get_ticks()
+            # Update cursor visibility based on blink rate
+            now: int = pygame.time.get_ticks()
             if now - self.cursor_timer > self.CURSOR_BLINK_RATE:
                 self.cursor_timer = now
                 self.cursor_visible = not self.cursor_visible
             
             if self.cursor_visible:
-                cursor_x = text_rect.right + 2
-                # Clamp cursor position to be inside the box
+                # Position cursor at the end of the text
+                cursor_x: int = text_rect.right + 2
+                # Clamp cursor position inside the box
                 if cursor_x > self.rect.right - 5:
                     cursor_x = self.rect.right - 5
                 
-                #  Make sure cursor is also within the clip rect
+                # Ensure cursor doesn't draw outside the clipping area
                 if cursor_x > clipping_rect.right:
                     cursor_x = clipping_rect.right
 

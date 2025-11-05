@@ -1,73 +1,81 @@
 import sys
 import pygame
-# Import our functions and classes
+from typing import Any, Dict, Callable, Optional
 from libs.utils.configs import loadsConfig, savesConfig
-#  Import ImageButton as well as new component names
 from libs.common.components import SolidButton, SolidBox, SolidDropDown, ImageButton
+from libs.utils.pylog import Logger
 
-def surface(screen, background, load_background_image_func):
-    """
-    Runs the settings menu loop.
-    Returns the updated settings dictionary.
-    """
-    settings = loadsConfig()
-    running = True
-    clock = pygame.time.Clock() # Add clock for FPS limiting
+logger = Logger(__name__)
 
-    # --- Create UI Objects ---
-    #  Changed SolidButton to ImageButton
-    back_btn = ImageButton(
+# Defines the Settings surface (screen).
+def surface(screen: pygame.Surface, background: pygame.Surface, 
+            load_background_image_func: Callable[[str], pygame.Surface]) -> Dict[str, Any]:
+    """
+    Runs the main loop for the Settings screen.
+    Allows changing theme, toggling music, and resetting to defaults.
+
+    Args:
+        screen: The main pygame display surface.
+        background: The background image surface (will be modified if theme changes).
+        load_background_image_func: A function (like `libs.common.kits.resources`)
+                                    that takes a theme name and returns a new
+                                    background surface.
+
+    Returns:
+        The updated settings dictionary.
+    """
+                
+    settings: Dict[str, Any] = loadsConfig()
+    running: bool = True
+    clock: pygame.time.Clock = pygame.time.Clock()
+
+    # --- Initialize UI Components ---
+    back_btn: ImageButton = ImageButton(
         x=50, y=50,
         image_name="back",
         theme=settings['themes'],
-        default_width=150, # Set to the old button's size
+        default_width=150,
         default_height=80
     )
     
-    #  Using new SolidDropDown component
-    themes_dropdown = SolidDropDown(
+    themes_dropdown: SolidDropDown = SolidDropDown(
         x=screen.get_width() / 2 - 150, y=300, 
         width=335, height=50,
-        main_text="Theme", # Set main_text properly
+        main_text="Theme",
         options=["CuteChaos", "StarSketch", "BubblePencil"]
     )
-    themes_dropdown.set_selected(settings['themes']) # Set its current value
+    themes_dropdown.set_selected(settings['themes'])
     
-    #  Using new SolidBox component
-    music_checkbox = SolidBox(
+    music_checkbox: SolidBox = SolidBox(
         x=screen.get_width() / 2 - 150, y=400,
         width=50, height=50,
         label="Music",
         initial_checked=settings['music']
     )
     
-    #  Using new SolidButton component
-    default_btn = SolidButton(
+    default_btn: SolidButton = SolidButton(
         x=screen.get_width() / 2 - 150, y=500,
         width=300, height=50,
         text="Reset Default",
         font_size=30
     )
 
-    # ---
-    # Create static assets ONCE, outside the loop
-    
-    # 1. Create a semi-transparent overlay
-    overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-    overlay.fill((0, 0, 0, 150)) 
+    overlay: pygame.Surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 150)) # Semi-transparent overlay
 
-    # 2. Render the "Settings" title
+    font_title: pygame.font.Font
     try:
         font_title = pygame.font.Font("freesansbold.ttf", 80)
     except FileNotFoundError:
         font_title = pygame.font.Font(None, 80)
-    title_surf = font_title.render("Settings", True, "White")
-    title_rect = title_surf.get_rect(center=(screen.get_width()/2, 100))
+    title_surf: pygame.Surface = font_title.render("Settings", True, "White")
+    title_rect: pygame.Rect = title_surf.get_rect(center=(screen.get_width()/2, 100))
+    # --- End UI Initialization ---
     
-    # --- Settings Loop ---
     while running:
-        # Store dropdown state *before* handling events
-        dropdown_was_open = themes_dropdown.is_open
+        # Check if dropdown was open *before* processing events
+        # This helps consume clicks that close the dropdown
+        dropdown_was_open: bool = themes_dropdown.is_open
 
         # --- Event Handling ---
         for event in pygame.event.get():
@@ -75,71 +83,59 @@ def surface(screen, background, load_background_image_func):
                 pygame.quit()
                 sys.exit()
             
+            # Event: Click Back button or press Escape
             if back_btn.is_clicked(event) or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-                savesConfig(settings)
+                savesConfig(settings) # Save settings on exit
                 running = False
                 continue 
 
-            # Handle dropdown event
-            new_theme = themes_dropdown.handle_event(event)
+            # Event: Interact with Theme dropdown
+            new_theme: Optional[str] = themes_dropdown.handle_event(event)
             if new_theme:
-                # A new theme was selected.
                 settings['themes'] = new_theme
                 
-                # Reload the background *immediately*
+                # Reload background and back button for new theme
                 background = load_background_image_func(new_theme)
-                
-                #  Reload the back button's image to match
                 back_btn.reload_image(new_theme)
                 
                 continue # Event handled
 
-            # If dropdown was open, consume the click to prevent click-through
+            # If dropdown was open and we get a mouse click, it was probably
+            # the click that closed the dropdown. Consume it.
             if dropdown_was_open and event.type == pygame.MOUSEBUTTONDOWN:
                 continue 
 
-            # Check other buttons
+            # Event: Click Reset Default button
             if default_btn.is_clicked(event):
                 settings = {"themes": "BubblePencil", "music": True}
                 
-                # Update UI elements to reflect the change
+                # Update UI to match new default settings
                 themes_dropdown.set_selected(settings['themes'])
                 music_checkbox.checked = settings['music']
-                # Reload background on CuteChaos reset
                 background = load_background_image_func(settings['themes'])
-                
-                #  Also update the back button on reset
                 back_btn.reload_image(settings['themes'])
                 
                 continue # Event handled
 
+            # Event: Click Music checkbox
             if music_checkbox.handle_event(event):
-                # State changed, update settings
                 settings['music'] = music_checkbox.checked
                 continue # Event handled
 
-
         # --- Drawing ---
-        # 1. Draw the background and overlay
         screen.blit(background, (0, 0))
         screen.blit(overlay, (0, 0))
 
-        # 2. Draw the pre-rendered title
         screen.blit(title_surf, title_rect)
 
-        # 3. Draw all standard UI elements
+        # Draw UI components
         back_btn.draw(screen)
         music_checkbox.draw(screen)
         default_btn.draw(screen)
-        
-        # 4. Draw the dropdown LAST so its options appear on top
-        themes_dropdown.draw(screen)
+        themes_dropdown.draw(screen) # Draw dropdown last so it appears on top
 
-        # 5. Update display
         pygame.display.flip()
         
-        # 6. Cap framerate
         clock.tick(60)
         
-    # Return the final settings to the main loop
-    return settings
+    return settings # Return updated settings to main loop

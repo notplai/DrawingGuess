@@ -1,56 +1,80 @@
 import pygame
+from typing import Any
 
+# Defines a Box UI component (checkbox).
 class Box:
     """
-    A clickable checkbox class.
-    This class is well-optimized as it renders text only once during initialization.
+    A simple checkbox UI component with a text label.
     """
     
-    def __init__(self, x, y, width, height, label="Checkbox", 
-                 initial_checked=False, font_size=30, text_color='White'):
+    def __init__(self, x: int, y: int, width: int, height: int, label: str = "Checkbox", 
+                 initial_checked: bool = False, font_size: int = 30, text_color: Any = 'White'):
+        """
+        Initializes the Checkbox.
+
+        Args:
+            x: The x-coordinate of the box's top-left corner.
+            y: The y-coordinate of the box's top-left corner.
+            width: The width of the clickable box.
+            height: The height of the clickable box.
+            label: The text label to display next to the box.
+            initial_checked: The default state (True=checked, False=unchecked).
+            font_size: The font size for the label.
+            text_color: The color for the box border, 'X', and label text.
+        """
         
-        # The checkbox's position and size
-        self.rect = pygame.Rect(x, y, width, height)
-        self.label = label
-        self.checked = initial_checked # The current state
-        self.text_color = text_color
+        self.rect: pygame.Rect = pygame.Rect(x, y, width, height)
+        self.label: str = label
+        self.checked: bool = initial_checked
+        self.text_color: Any = text_color
         
-        # Initialize font
+        self.font: pygame.font.Font
         try:
             self.font = pygame.font.Font("freesansbold.ttf", font_size)
         except FileNotFoundError:
             self.font = pygame.font.Font(None, font_size)
 
-        # ---
-        # Render the label surface ONCE during creation
-        self.label_surf = self.font.render(self.label, True, self.text_color)
-        # Position label to the right of the box
-        self.label_rect = self.label_surf.get_rect(midleft=(self.rect.right + 10, self.rect.centery))
+        # Render and position the text label
+        self.label_surf: pygame.Surface = self.font.render(self.label, True, self.text_color)
+        self.label_rect: pygame.Rect = self.label_surf.get_rect(midleft=(self.rect.right + 10, self.rect.centery))
 
-    def draw(self, screen):
-        """Draws the checkbox on the screen."""
-        
-        # 1. Draw the box
+    # Draws the checkbox on the screen.
+    def draw(self, screen: pygame.Surface) -> None:
+        """
+        Draws the checkbox (border, label, and 'X' if checked)
+        on the provided surface.
+
+        Args:
+            screen: The pygame.Surface to draw on.
+        """
+        # Draw the box border
         pygame.draw.rect(screen, self.text_color, self.rect, 2)
         
-        # 2. Draw the pre-rendered label
+        # Draw the label
         screen.blit(self.label_surf, self.label_rect)
         
-        # 3. Draw the 'X' if checked (this is fast)
+        # Draw the 'X' if checked
         if self.checked:
-            p1 = (self.rect.left + 5, self.rect.top + 5)
-            p2 = (self.rect.right - 5, self.rect.bottom - 5)
-            p3 = (self.rect.left + 5, self.rect.bottom - 5)
-            p4 = (self.rect.right - 5, self.rect.top + 5)
+            p1: tuple[int, int] = (self.rect.left + 5, self.rect.top + 5)
+            p2: tuple[int, int] = (self.rect.right - 5, self.rect.bottom - 5)
+            p3: tuple[int, int] = (self.rect.left + 5, self.rect.bottom - 5)
+            p4: tuple[int, int] = (self.rect.right - 5, self.rect.top + 5)
             pygame.draw.line(screen, self.text_color, p1, p2, 4)
             pygame.draw.line(screen, self.text_color, p3, p4, 4)
 
-    def handle_event(self, event):
-        """Handles click events, toggles state, and returns True if changed."""
-        
+    # Handles user input events for the checkbox.
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        """
+        Checks if the checkbox was clicked and toggles its state.
+
+        Args:
+            event: The pygame.event.Event to process.
+
+        Returns:
+            True if the checkbox state was changed, False otherwise.
+        """
         if event.type == pygame.MOUSEBUTTONDOWN:
-            # Check if the click was on the box
             if self.rect.collidepoint(event.pos):
                 self.checked = not self.checked # Toggle state
                 return True # State changed
-        return False # State did not change
+        return False # No change

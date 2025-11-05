@@ -1,49 +1,69 @@
 import pygame
+from typing import Optional, Literal, Any
+from libs.utils.pylog import Logger
 
+logger = Logger(__name__)
+
+# Defines a SolidButton UI component.
 class Button:
     """
-    A clickable button class.
-    [Updated to support icons]
+    A UI component for a solid color button with text or an icon.
     """
     
-    def __init__(self, x, y, width, height, text='', text_color='Black', 
-                 bg_color=(200, 200, 200), border_color=(0, 0, 0), border_width=2, 
-                 font_size=30, text_align='center', icon_path=None): #  Added icon_path
+    def __init__(self, x: int, y: int, width: int, height: int, text: str = '', text_color: Any = 'Black', 
+                 bg_color: Any = (200, 200, 200), border_color: Optional[Any] = (0, 0, 0), border_width: int = 2, 
+                 font_size: int = 30, text_align: Literal['center', 'left', 'right'] = 'center', 
+                 icon_path: Optional[str] = None):
+        """
+        Initializes the Button.
+
+        Args:
+            x: The x-coordinate of the top-left corner.
+            y: The y-coordinate of the top-left corner.
+            width: The width of the button.
+            height: The height of the button.
+            text: The text to display on the button (if no icon).
+            text_color: The color of the text.
+            bg_color: The background color of the button.
+            border_color: The color of the border. None for no border.
+            border_width: The width of the border.
+            font_size: The font size for the text.
+            text_align: The alignment of the text ('center', 'left', 'right').
+            icon_path: The file path to an icon to display (overrides text).
+        """
         
-        # The button's position and size
-        self.rect = pygame.Rect(x, y, width, height)
+        self.rect: pygame.Rect = pygame.Rect(x, y, width, height)
         
-        # Text and color properties
-        self.text = text
-        self.text_color = text_color
-        self.bg_color = bg_color
-        self.border_color = border_color
-        self.border_width = border_width
+        self.text: str = text
+        self.text_color: Any = text_color
+        self.bg_color: Any = bg_color
+        self.border_color: Optional[Any] = border_color
+        self.border_width: int = border_width
         
-        # Initialize font
+        self.font: pygame.font.Font
         try:
             self.font = pygame.font.Font("freesansbold.ttf", font_size)
         except FileNotFoundError:
-            self.font = pygame.font.Font(None, font_size) # Fallback to CuteChaos
+            self.font = pygame.font.Font(None, font_size)
 
-        # ---  Icon Loading ---
-        self.icon_surf = None
+        # Load and scale the icon if provided
+        self.icon_surf: Optional[pygame.Surface] = None
         if icon_path:
             try:
                 self.icon_surf = pygame.image.load(icon_path).convert_alpha()
-                # Scale the icon to fit the button (e.g., 80% of height)
-                icon_size = int(self.rect.height * 0.7) # 70% for padding
+                # Scale icon to fit button height
+                icon_size: int = int(self.rect.height * 0.7)
                 self.icon_surf = pygame.transform.smoothscale(self.icon_surf, (icon_size, icon_size))
             except Exception as e:
-                print(f"Warning: Could not load icon '{icon_path}': {e}")
-                self.icon_surf = None # Failed, fall back to text
+                logger.warning(f"Warning: Could not load icon '{icon_path}': {e}")
+                self.icon_surf = None
 
-        # --- Text Rendering (as fallback) ---
-        self.text_surf = self.font.render(text, True, text_color)
+        # Render the text surface
+        self.text_surf: pygame.Surface = self.font.render(text, True, text_color)
         
-        # --- Handle Text Alignment ---
+        # Position the text based on alignment
         if text_align == 'center':
-            self.text_rect = self.text_surf.get_rect(center=self.rect.center)
+            self.text_rect: pygame.Rect = self.text_surf.get_rect(center=self.rect.center)
         elif text_align == 'left':
             self.text_rect = self.text_surf.get_rect(midleft=(self.rect.x + 10, self.rect.centery))
         elif text_align == 'right':
@@ -51,30 +71,40 @@ class Button:
         else:
             self.text_rect = self.text_surf.get_rect(center=self.rect.center)
             
-    def draw(self, screen):
-        """Draws the button on the screen."""
-        
-        # 1. Draw background
+    # Draws the button on the screen.
+    def draw(self, screen: pygame.Surface) -> None:
+        """
+        Draws the button (background, border, and icon or text)
+        on the provided surface.
+
+        Args:
+            screen: The pygame.Surface to draw on.
+        """
         pygame.draw.rect(screen, self.bg_color, self.rect)
         
-        # 2. Draw border (if specified)
         if self.border_color:
             pygame.draw.rect(screen, self.border_color, self.rect, self.border_width)
             
-        # 3.  Draw icon or text
         if self.icon_surf:
-            icon_rect = self.icon_surf.get_rect(center=self.rect.center)
+            # Draw icon if it exists
+            icon_rect: pygame.Rect = self.icon_surf.get_rect(center=self.rect.center)
             screen.blit(self.icon_surf, icon_rect)
         else:
+            # Draw text if no icon
             screen.blit(self.text_surf, self.text_rect)
 
-    def is_clicked(self, event):
-        """Checks if the button was clicked."""
-        
-        # Check for a mouse click event
+    # Checks if the button was clicked.
+    def is_clicked(self, event: pygame.event.Event) -> bool:
+        """
+        Checks if a MOUSEBUTTONDOWN event occurred within the button's bounds.
+
+        Args:
+            event: The pygame.event.Event to check.
+
+        Returns:
+            True if the button was clicked, False otherwise.
+        """
         if event.type == pygame.MOUSEBUTTONDOWN:
-            # Check if the mouse position collides with the button's rect
             if self.rect.collidepoint(event.pos):
                 return True
         return False
-

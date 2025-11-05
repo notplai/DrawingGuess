@@ -1,10 +1,9 @@
 {
-    "kits-loaders": "1.1.0",
+    "kits-loaders": 3.1,
 
     "components": {
         "name": "@builtin",
-        "version": "1.0.0@bin",
-        "assets": "assets"
+        "version": "1.0.0@bin"
     },
     "authors": [
         "Suphakorn Khamwongsa",
@@ -13,7 +12,7 @@
     "@objects": [
         {
             "name": "Hand",
-            "main_file": "Hand/__init__.py",
+            "main_file": "tools/Hand/",
             "main_class": "HandTool",
             "type": "drawing_tool",
             "icons": {
@@ -26,25 +25,21 @@
         },
         {
             "name": "ColorPalette",
-            "main_file": "ColorPalette/__init__.py",
+            "main_file": "tools/ColorPalette/",
             "main_class": "ColorPalette",
             "type": "context_tool",
             "icons": {
-                "tools": ".color_pattle.png",
-                "cursor": null,
-                "cursor_size": null,
-                "cursor_hotspot": null,
-                "cursor_offset": [0, 0]
+                "tools": ".color_pattle.png"
             }
         },
         {
             "name": "Pen",
-            "main_file": "Pen/__init__.py",
+            "main_file": "tools/Pen/",
             "main_class": "PenTool",
             "type": "drawing_tool",
             "icons": {
                 "tools": ".pen.png",
-                "cursor": ".pen.png",
+                "cursor": ".pen.png", 
                 "cursor_size": [64, 64],
                 "cursor_hotspot": null,
                 "cursor_offset": [-57.35, -22]
@@ -52,29 +47,22 @@
         },
         {
             "name": "Eraser",
-            "main_file": "Eraser/__init__.py",
+            "main_file": "tools/Eraser/",
             "main_class": "EraserTool",
             "type": "drawing_tool",
             "icons": {
                 "tools": ".eraser.png",
-                "cursor": ".eraser.png",
+                "cursor": ".eraser.png", 
                 "cursor_size": [64, 64],
                 "cursor_hotspot": null,
                 "cursor_offset": [-56, -20.5]
             }
         },
         {
-            "name": "ZoomTool",
+            "name": "Zoom",
             "main_file": "utils/zoom.py",
             "main_class": "ZoomTool",
-            "type": "ui_component",
-            "icons": {
-                "tools": null,
-                "cursor": null,
-                "cursor_size": null,
-                "cursor_hotspot": null,
-                "cursor_offset": [0, 0]
-            }
+            "type": "utility_tool"
         }
     ]
 }

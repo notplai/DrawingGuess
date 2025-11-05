@@ -1,26 +1,27 @@
+# This file contains unit tests for the SolidButton component.
+# It verifies button creation and click detection logic.
+
 import pygame
 import sys
 import os
+from typing import Any
 
-# We need to add the 'src' directory to the Python path so we can import our modules
-# This adjusts the path to go up one level from 'tests' and then into 'src'
+# Add the 'src' directory to the Python path to allow importing library modules
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
-from libs.common.components import SoildButton
+from libs.common.components import SolidButton
 
-# --- Test Fixture ---
-
-# A "fixture" is a setup function that pytest runs before a test.
-# This one initializes pygame and a screen, which our components need.
-def setup_pygame():
-    """Initializes pygame in a minimal way for testing."""
+# Sets up a minimal pygame environment for testing.
+def setup_pygame() -> None:
+    """
+    Initializes pygame with a dummy video driver if necessary,
+    allowing tests to run in environments without a display (like CI/CD).
+    """
     try:
         pygame.init()
-        # Set a minimal display mode
         pygame.display.set_mode((100, 100))
     except pygame.error as e:
-        # Handle cases where a display (like in CI) isn't available
-        # We can try a dummy video driver
+        # If no video device is available, use the 'dummy' driver
         if 'No available video device' in str(e):
             os.environ['SDL_VIDEODRIVER'] = 'dummy'
             pygame.init()
@@ -28,13 +29,15 @@ def setup_pygame():
         else:
             raise
 
-# --- Test Functions ---
-
-def test_button_creation():
-    """Tests if a Button object is created with the correct properties."""
+# Tests if a SolidButton object is created with the correct attributes.
+def test_button_creation() -> None:
+    """
+    Verifies that the Button class constructor correctly assigns
+    position, size, and text attributes.
+    """
     setup_pygame()
     
-    btn = SoildButton(10, 20, 100, 50, text="Click Me", font_size=20)
+    btn: SolidButton = SolidButton(10, 20, 100, 50, text="Click Me", font_size=20)
     
     assert btn.rect.x == 10
     assert btn.rect.y == 20
@@ -43,29 +46,37 @@ def test_button_creation():
     assert btn.text == "Click Me"
     pygame.quit()
 
-def test_button_is_clicked_positive():
-    """Tests if the button correctly detects a click inside its area."""
+# Tests if the button correctly detects a click inside its bounds.
+def test_button_is_clicked_positive() -> None:
+    """
+    Verifies that the is_clicked method returns True when a
+    MOUSEBUTTONDOWN event occurs within the button's rect.
+    """
     setup_pygame()
     
-    btn = SoildButton(10, 10, 100, 50, text="Click Me")
+    btn: SolidButton = SolidButton(10, 10, 100, 50, text="Click Me")
     
-    # Simulate a MOUSEBUTTONDOWN event at position (15, 15), which is inside the button
-    mock_event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {
-        'button': 1,  # Left click
+    # Create a mock event simulating a click at (15, 15)
+    mock_event: pygame.event.Event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {
+        'button': 1,
         'pos': (15, 15)
     })
     
     assert btn.is_clicked(mock_event) == True
     pygame.quit()
 
-def test_button_is_clicked_negative_outside():
-    """Tests if the button correctly ignores a click outside its area."""
+# Tests if the button correctly ignores a click outside its bounds.
+def test_button_is_clicked_negative_outside() -> None:
+    """
+    Verifies that the is_clicked method returns False when a
+    MOUSEBUTTONDOWN event occurs outside the button's rect.
+    """
     setup_pygame()
     
-    btn = SoildButton(10, 10, 100, 50, text="Click Me")
+    btn: SolidButton = SolidButton(10, 10, 100, 50, text="Click Me")
     
-    # Simulate a click at (200, 200), which is outside
-    mock_event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {
+    # Create a mock event simulating a click at (200, 200)
+    mock_event: pygame.event.Event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {
         'button': 1,
         'pos': (200, 200)
     })
@@ -73,14 +84,19 @@ def test_button_is_clicked_negative_outside():
     assert btn.is_clicked(mock_event) == False
     pygame.quit()
 
-def test_button_is_clicked_negative_wrong_event():
-    """Tests if the button ignores events that aren't MOUSEBUTTONDOWN."""
+# Tests if the button ignores events that are not MOUSEBUTTONDOWN.
+def test_button_is_clicked_negative_wrong_event() -> None:
+    """
+    Verifies that the is_clicked method returns False when
+    an event other than MOUSEBUTTONDOWN occurs, even if
+    it's within the button's rect.
+    """
     setup_pygame()
     
-    btn = SoildButton(10, 10, 100, 50, text="Click Me")
+    btn: SolidButton = SolidButton(10, 10, 100, 50, text="Click Me")
     
-    # Simulate a MOUSEMOTION event
-    mock_event = pygame.event.Event(pygame.MOUSEMOTION, {
+    # Create a mock event simulating mouse motion
+    mock_event: pygame.event.Event = pygame.event.Event(pygame.MOUSEMOTION, {
         'pos': (15, 15)
     })
     
