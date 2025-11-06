@@ -22,7 +22,7 @@ def get(fdir: str, ftar: str = 'initial.json') -> Dict[str, Any]:
     __package__: str = os.path.join(os.path.abspath(fdir), ftar) if not os.path.isabs(fdir) else os.path.join(fdir, ftar)
     
     if not os.path.exists(__package__): 
-        raise FileNotFoundError(f"{ftar} file not found in {fdir}\n |-package at {__package__}")
+        raise FileNotFoundError(f"{ftar} file not found in {fdir}\n |- package at {__package__}")
 
     # Open and parse the JSON file
     with open(__package__, 'r', encoding='utf-8') as f:

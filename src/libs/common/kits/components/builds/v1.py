@@ -26,35 +26,26 @@ def loads(components_dir: str = "components") -> List[Tuple[Dict[str, Any], Type
     
     base_components_dir: str = os.path.abspath(components_dir)
     if not os.path.exists(base_components_dir):
-        logger.warning(f"Warning: Components directory not found: {base_components_dir}")
+        logger.warning(f"Components directory not found: {base_components_dir}")
         return []
-
-    logger.info(f"Scanning for component kits in: {base_components_dir}")
     
     # Iterate through each item in the components directory
-    for kit_name in os.listdir(base_components_dir):
-        kit_path: str = os.path.join(base_components_dir, kit_name)
+    for component in os.listdir(base_components_dir):
+        kit_path: str = os.path.join(base_components_dir, component)
         if not os.path.isdir(kit_path):
             continue # Skip files
             
         # Look for the 'initial.json' config file
         config_path: str = os.path.join(kit_path, "initial.json")
         if not os.path.exists(config_path):
-            logger.info(f"Skipping '{kit_name}': No 'initial.json' found.")
+            logger.warning(f"Could not loaded '{component}'\n|- No 'initial.json' found.")
             continue
             
-        logger.info(f"Found component kit: {kit_name}")
         try:
             with open(config_path, 'r') as f:
                 kit_config: Dict[str, Any] = json.load(f)
-            
-            # Check if this loader (v1.0.0) can handle this kit
-            loader_version: str = kit_config.get("kits-loaders", "0.0.0")
-            if loader_version != "1.0.0":
-                logger.warning(f"Warning: Skipping kit '{kit_name}'. It requires loader v{loader_version}, but we are v1.0.0.")
-                continue
                 
-            logger.info(f"Loading kit: {kit_config.get('components-name')} v{kit_config.get('components-version')}")
+            logger.info(f"Loading component\n|-{kit_config.get('components-name')} v{kit_config.get('components-version')}")
 
             # Load each tool defined in the kit's "@objects" list
             for tool_config in kit_config.get("@objects", []):
@@ -65,16 +56,16 @@ def loads(components_dir: str = "components") -> List[Tuple[Dict[str, Any], Type
                     module_path: str = os.path.abspath(os.path.join(kit_path, main_file))
                     
                     # Create a unique module name
-                    module_name: str = f"components.{kit_name}.{main_file.replace('.py', '').replace(os.sep, '.')}"
+                    module_name: str = f"components.{component}.{main_file.replace('.py', '').replace(os.sep, '.')}"
                     
                     if not os.path.exists(module_path):
-                         logger.error(f"Error: main_file not found for tool '{tool_config['name']}': {module_path}")
+                         logger.exception(f"Cannot loads 'main_file' cause it not found for tool '{tool_config['name']}'\n|- At {module_path}")
                          continue
                     
                     # --- Dynamic Module Loading ---
                     spec = importlib.util.spec_from_file_location(module_name, module_path)
                     if spec is None or spec.loader is None:
-                        logger.error(f"Error: Could not create spec for module {module_name} at {module_path}")
+                        logger.exception(f"Could not create spec for module {module_name}\n|- At {module_path}")
                         continue
                         
                     module = importlib.util.module_from_spec(spec)
@@ -91,20 +82,20 @@ def loads(components_dir: str = "components") -> List[Tuple[Dict[str, Any], Type
                         if os.path.exists(icon_path):
                             tool_config["icon_path"] = icon_path
                         else:
-                            logger.warning(f"Warning: Icon file not found: {icon_path}")
+                            logger.warning(f"Icon file not found.\n|- At {icon_path}")
                             tool_config["icon_path"] = None
                     else:
                         tool_config["icon_path"] = None
                     
                     loaded_tools.append((tool_config, ToolClass))
-                    logger.info(f"  Successfully loaded object: {tool_config['name']}")
+                    logger.info(f"Loaded tool '{tool_config['name']}' Object.")
 
                 except Exception as e:
-                    logger.error(f"Error loading tool object '{tool_config.get('name', 'UNKNOWN')}': {e}")
+                    logger.exception(f"Cannot loading tool '{tool_config.get('name', 'UNKNOWN')}' Object.\n|- {e}")
                     import traceback
                     traceback.print_exc()
 
         except Exception as e:
-            logger.error(f"Error parsing 'initial.json' for kit {kit_name}: {e}")
+            logger.exception(f"Cannot parsing 'initial.json' for {component} component.\n|- {e}")
     
     return loaded_tools

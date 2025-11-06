@@ -1,1 +1,1 @@
-# TODO Do QuickDrawing (Important!)
+# TODO: QuickInk (Important!)

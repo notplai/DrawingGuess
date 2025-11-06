@@ -58,7 +58,7 @@ def surface(screen: pygame.Surface, background: pygame.Surface) -> None:
     
     quick_btn: SolidButton = SolidButton(
         x=btn_x, y=350, width=btn_width, height=btn_height,
-        text="Guessing", font_size=50
+        text="QuickInk", font_size=50
     )
     
     ai_btn: SolidButton = SolidButton(
@@ -91,7 +91,7 @@ def surface(screen: pygame.Surface, background: pygame.Surface) -> None:
         text="Back", font_size=50
     )
     # --- End UI Components ---
-    
+
     while running:
         # --- Event Handling ---
         for event in pygame.event.get():
@@ -108,7 +108,7 @@ def surface(screen: pygame.Surface, background: pygame.Surface) -> None:
                     current_view = "file" # Go to file menu
                 
                 if quick_btn.is_clicked(event):
-                    # TODO: "Guessing" mode not implemented, placeholder goes to file menu
+                    # TODO: "QuickInk" mode not implemented, placeholder goes to file menu
                     current_view = "file"
                 
             elif current_view == "file":

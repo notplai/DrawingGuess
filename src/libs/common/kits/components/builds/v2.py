@@ -42,7 +42,7 @@ def loads(components_dir: str = "components") -> List[Tuple[Dict[str, Any], Type
 
     base_components_dir: str = os.path.abspath(components_dir)
     if not os.path.exists(base_components_dir):
-        logger.warning(f"Warning: Components directory not found: {base_components_dir}")
+        logger.warning(f"Components directory not found: {base_components_dir}")
         return []
 
     logger.info(f"Scanning for component kits in: {base_components_dir}")
@@ -82,13 +82,13 @@ def loads(components_dir: str = "components") -> List[Tuple[Dict[str, Any], Type
                     module_name: str = f"components.{kit_name}.{main_file.replace('.py', '').replace(os.sep, '.')}"
                     
                     if not os.path.exists(module_path):
-                        logger.error(f"Error: main_file not found for tool '{tool_config['name']}': {module_path}")
+                        logger.error(f"'main_file' not found for tool '{tool_config['name']}'\n|- At {module_path}")
                         continue
                     
                     # --- Dynamic Module Loading ---
                     spec = importlib.util.spec_from_file_location(module_name, module_path)
                     if spec is None or spec.loader is None:
-                        logger.error(f"Error: Could not create spec for module {module_name} at {module_path}")
+                        logger.error(f"Error: Could not create spec for module {module_name}\n|- At {module_path}")
                         continue
                         
                     module = importlib.util.module_from_spec(spec)
@@ -118,11 +118,8 @@ def loads(components_dir: str = "components") -> List[Tuple[Dict[str, Any], Type
                         if os.path.exists(icon_path):
                             tool_config["icon_path"] = icon_path
                         else:
-                            logger.warning(f"Warning: Tool icon file not found: {icon_path}")
-                            fallback_path: str = os.path.join(project_asset_dir, 'miss_texture.png'.lstrip('.'))
-                            if os.path.exists(fallback_path):
-                                logger.info(f"Info: Loading fallback icon: {fallback_path}")
-                                tool_config["icon_path"] = fallback_path
+                            logger.warning(f"Tool icon file not found: {icon_path}")
+                            tool_config["cursor_path"] = os.path.join(project_asset_dir, 'miss_texture.png'.lstrip('.'))
 
                     # --- Load Cursor Icon (Theme-aware) ---
                     cursor_icon_name: Optional[str] = icons_config.get("cursor")
@@ -136,11 +133,8 @@ def loads(components_dir: str = "components") -> List[Tuple[Dict[str, Any], Type
                         if os.path.exists(cursor_icon_path):
                             tool_config["cursor_path"] = cursor_icon_path
                         else:
-                            logger.warning(f"Warning: Cursor icon file not found: {cursor_icon_path}")
-                            fallback_path = os.path.join(project_asset_dir, 'miss_texture.png'.lstrip('.'))
-                            if os.path.exists(fallback_path):
-                                logger.info(f"Info: Loading fallback cursor: {fallback_path}")
-                                tool_config["cursor_path"] = fallback_path
+                            logger.warning(f"Cursor icon file not found.\n|- At {cursor_icon_path}")
+                            tool_config["cursor_path"] = os.path.join(project_asset_dir, 'miss_texture.png'.lstrip('.'))
 
                     # Load cursor metadata
                     tool_config["cursor_size"] = icons_config.get("cursor_size")
@@ -149,14 +143,14 @@ def loads(components_dir: str = "components") -> List[Tuple[Dict[str, Any], Type
 
 
                     loaded_tools.append((tool_config, ToolClass))
-                    logger.info(f"  Successfully loaded object: {tool_config['name']}")
+                    logger.info(f"Loaded tool object '{tool_config['name']}'.")
 
                 except Exception as e:
-                    logger.error(f"Error loading tool object '{tool_config.get('name', 'UNKNOWN')}': {e}")
+                    logger.error(f"Cannot loading tool object '{tool_config.get('name', 'UNKNOWN')}'\n|- {e}")
                     import traceback
                     traceback.print_exc()
 
         except Exception as e:
-            logger.error(f"Error parsing 'initial.json' for kit {kit_name}: {e}")
+            logger.error(f"Error parsing 'initial.json' for kit {kit_name}\n|- {e}")
     
     return loaded_tools

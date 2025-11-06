@@ -64,7 +64,7 @@ def loads(components_dir: str = "components") -> List[Tuple[Dict[str, Any], Type
                         # --- Dynamic Module Loading ---
                         spec = importlib.util.spec_from_file_location(modname, modpath)
                         if spec is None or spec.loader is None:
-                            logger.warning(f"Could not load module for module.\n|-ModulePackage: {modname}\n|-AtPath: {modpath}")
+                            logger.warning(f"Could not load module for package.\n|- Module {modname}\n|- AtPath {modpath}")
                             continue
                         module = importlib.util.module_from_spec(spec)
 
